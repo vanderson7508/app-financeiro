@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Transação{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2>Editar Transação</h2>
+
+        <form method="POST">
+            <label for="descricao">Descrição:</label>
+            <input type="text" id="descricao" name="descricao" value="{{ transacao.descricao }}" required>
+
+            <label for="valor">Valor:</label>
+            <input type="number" id="valor" name="valor" step="0.01" value="{{ transacao.valor }}" required>
+
+            <label for="categoria">Categoria:</label>
+            <select id="categoria" name="categoria" required>
+                <option value="Alimentação" {% if transacao.categoria == 'Alimentação' %}selected{% endif %}>Alimentação</option>
+                <option value="Transporte" {% if transacao.categoria == 'Transporte' %}selected{% endif %}>Transporte</option>
+                <option value="Saúde" {% if transacao.categoria == 'Saúde' %}selected{% endif %}>Saúde</option>
+                <option value="Trabalho" {% if transacao.categoria == 'Trabalho' %}selected{% endif %}>Trabalho/Renda</option>
+                <option value="Investimentos" {% if transacao.categoria == 'Investimentos' %}selected{% endif %}>Investimentos</option>
+                <option value="Outro" {% if transacao.categoria == 'Outro' %}selected{% endif %}>Outro</option>
+            </select>
+
+            <label for="tipo">Tipo:</label>
+            <select id="tipo" name="tipo" required>
+                <option value="Despesa" {% if transacao.tipo == 'Despesa' %}selected{% endif %}>Despesa</option>
+                <option value="Receita" {% if transacao.tipo == 'Receita' %}selected{% endif %}>Receita</option>
+            </select>
+
+            <label for="forma_pagamento">Forma de Pagamento:</label>
+            <select id="forma_pagamento" name="forma_pagamento" required>
+                <option value="Dinheiro" {% if transacao.forma_pagamento == 'Dinheiro' %}selected{% endif %}>Dinheiro</option>
+                <option value="Débito" {% if transacao.forma_pagamento == 'Débito' %}selected{% endif %}>Débito</option>
+                <option value="Crédito" {% if transacao.forma_pagamento == 'Crédito' %}selected{% endif %}>Crédito</option>
+            </select>
+
+            <label for="data">Data:</label>
+            <input type="date" id="data" name="data" value="{{ transacao.data }}" required>
+
+            <button type="submit">Salvar Alterações</button>
+        </form>
+    </div>
+{% endblock %}

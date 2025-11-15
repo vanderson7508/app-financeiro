@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Adicionar Transação{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2>Adicionar Nova Transação</h2>
+
+        <form method="POST">
+            <label for="descricao">Descrição:</label>
+            <input type="text" id="descricao" name="descricao" required>
+
+            <label for="valor">Valor:</label>
+            <input type="number" id="valor" name="valor" step="0.01" required>
+
+            <label for="categoria">Categoria:</label>
+            <select id="categoria" name="categoria" required>
+                <option value="">-- Selecione --</option>
+                <option value="Alimentação">Alimentação</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Trabalho">Trabalho/Renda</option>
+                <option value="Investimentos">Investimentos</option>
+                <option value="Outro">Outro</option>
+            </select>
+
+            <label for="tipo">Tipo:</label>
+            <select id="tipo" name="tipo" required>
+                <option value="">-- Selecione --</option>
+                <option value="Despesa">Despesa</option>
+                <option value="Receita">Receita</option>
+            </select>
+
+            <label for="forma_pagamento">Forma de Pagamento:</label>
+            <select id="forma_pagamento" name="forma_pagamento" required>
+                <option value="">-- Selecione --</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Débito">Débito</option>
+                <option value="Crédito">Crédito</option>
+            </select>
+
+            <label for="data">Data:</label>
+            <input type="date" id="data" name="data" required>
+
+            <button type="submit">Adicionar Transação</button>
+        </form>
+    </div>
+{% endblock %}

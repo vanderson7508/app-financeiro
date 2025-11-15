@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Minhas Transações{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2>Minhas Transações</h2>
+
+        {% if transacoes %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Tipo</th>
+                        <th>Forma de Pagamento</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transacao in transacoes %}
+                    <tr>
+                        <td>{{ transacao.data.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ transacao.descricao }}</td>
+                        <td>{{ transacao.categoria }}</td>
+                        <td>{{ transacao.tipo }}</td>
+                        <td>{{ transacao.forma_pagamento }}</td>
+                        <td>R$ {{ "%.2f"|format(transacao.valor) }}</td>
+                       <td>
+                          <a href="{{ url_for('editar', id=transacao.id) }}" class="btn-pequeno">Editar</a>
+                          <form method="POST" action="{{ url_for('deletar', id=transacao.id) }}" style="display:inline;" onsubmit="return confirm('Tem certeza que quer deletar?');">
+                              <button type="submit" class="btn-deletar">Deletar</button>
+                          </form>
+                       </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Nenhuma transação adicionada ainda.</p>
+        {% endif %}
+    </div>
+{% endblock %}
