@@ -13,6 +13,7 @@ from itsdangerous import URLSafeTimedSerializer
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Email, To, Content
 import logging
+from flask import flash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get(
@@ -378,14 +379,30 @@ def lista_transacoes():
 @app.route('/adicionar', methods=['GET', 'POST'])
 @login_required
 def adicionar():
+    cartoes = CartaoCredito.query.filter_by(usuario_id=current_user.id).all()
+    categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()
+    bancos = Banco.query.filter_by(usuario_id=current_user.id).all()
+
     if request.method == 'POST':
+        forma_pagamento = request.form.get('forma_pagamento')
+
+        # Verificar se selecionou cartão de crédito mas não tem cartões
+        if forma_pagamento == 'Cartão de Crédito' and not cartoes:
+            flash('⚠️ Você precisa cadastrar um cartão de crédito primeiro!', 'warning')
+            return redirect(url_for('criar_cartao'))
+
+        # Verificar se selecionou banco mas não tem bancos
+        banco_id = request.form.get('banco_id', type=int)
+        if banco_id and banco_id > 0 and not bancos:
+            flash('⚠️ Você precisa cadastrar um banco primeiro!', 'warning')
+            return redirect(url_for('criar_banco'))
+
         descricao = request.form.get('descricao')
         valor_str = request.form.get('valor', '0').strip()
         valor_str = valor_str.replace('.', '').replace(',', '.')
         valor = float(valor_str)
         categoria = request.form.get('categoria')
         tipo = request.form.get('tipo')
-        forma_pagamento = request.form.get('forma_pagamento')
         data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
 
         banco_id = request.form.get('banco_id', type=int)
@@ -481,10 +498,6 @@ def adicionar():
 
         db.session.commit()
         return redirect(url_for('lista_transacoes'))
-
-    cartoes = CartaoCredito.query.filter_by(usuario_id=current_user.id).all()
-    categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()
-    bancos = Banco.query.filter_by(usuario_id=current_user.id).all()
 
     return render_template('adicionar.html', cartoes=cartoes, categorias=categorias, bancos=bancos)
 
@@ -1224,6 +1237,12 @@ def transferencia():
         return redirect(url_for('bancos'))
 
     bancos_lista = Banco.query.filter_by(usuario_id=current_user.id).all()
+
+    # Verificar se tem pelo menos 2 bancos
+    if len(bancos_lista) < 2:
+        flash('⚠️ Você precisa ter pelo menos 2 bancos cadastrados para fazer transferência!', 'warning')
+        return redirect(url_for('bancos'))
+
     return render_template('transferencia.html', bancos=bancos_lista)
 
 # ===== ROTAS DE CARTÃO DE CRÉDITO =====
@@ -1322,6 +1341,16 @@ def compras_cartao():
 @app.route('/compras-cartao/criar', methods=['GET', 'POST'])
 @login_required
 def criar_compra_cartao():
+    from flask import flash
+
+    cartoes = CartaoCredito.query.filter_by(usuario_id=current_user.id).all()
+    categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()
+
+    # Verificar se tem cartões cadastrados
+    if not cartoes:
+        flash('⚠️ Você precisa cadastrar um cartão de crédito primeiro!', 'warning')
+        return redirect(url_for('criar_cartao'))
+
     if request.method == 'POST':
         cartao_id = request.form.get('cartao_id', type=int)
 
@@ -1353,9 +1382,6 @@ def criar_compra_cartao():
         db.session.commit()
 
         return redirect(url_for('compras_cartao'))
-
-    cartoes = CartaoCredito.query.filter_by(usuario_id=current_user.id).all()
-    categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()
 
     return render_template('criar_compra_cartao.html', cartoes=cartoes, categorias=categorias)
 
@@ -1406,6 +1432,11 @@ def dividas_parceladas():
 
     compras = CompraCartao.query.filter_by(
         usuario_id=current_user.id, status='aberta').all()
+
+    # Verificar se tem dívidas parceladas
+    if not compras:
+        flash('ℹ️ Você não tem dívidas parceladas no momento.', 'info')
+        return redirect(url_for('cartoes'))
 
     dividas_por_mes = {}
 
