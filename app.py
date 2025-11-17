@@ -45,7 +45,6 @@ serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 # ===== FIM DAS CONFIGURAÇÕES =====
-
 db.init_app(app)
 
 mail = Mail(app)
