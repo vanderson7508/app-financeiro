@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Adicionar Saldo - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .banco-info {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .banco-info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .banco-info .valor {
+            font-size: 1.8em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .info-box {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #065f46;
+            font-size: 0.95em;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-enviar {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-cancelar {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 600px) {
+            .form-container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>➕ Adicionar Saldo</h2>
+
+        <div class="banco-info">
+            <h3>{{ banco.nome }}</h3>
+            <div class="valor">R$ {{ "%.2f"|format(banco.saldo) }}</div>
+        </div>
+
+        <div class="info-box">
+            <p>💡 <strong>Dica:</strong> Registre aqui quando você recebe dinheiro em sua conta (salário, transferência, etc).</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('adicionar_saldo', id=banco.id) }}">
+            <div class="form-group">
+                <label for="valor">Valor a Adicionar (R$) *</label>
+                <input 
+                    type="number" 
+                    id="valor" 
+                    name="valor" 
+                    placeholder="0.00" 
+                    step="0.01" 
+                    min="0"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="descricao">Descrição *</label>
+                <input 
+                    type="text" 
+                    id="descricao" 
+                    name="descricao" 
+                    placeholder="Ex: Salário, Transferência, Resgate"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="data">Data *</label>
+                <input 
+                    type="date" 
+                    id="data" 
+                    name="data" 
+                    required
+                >
+            </div>
+
+            <div class="botoes">
+                <button type="submit" class="btn-enviar">✅ Adicionar Saldo</button>
+                <a href="{{ url_for('movimentacoes_banco', id=banco.id) }}" class="btn btn-cancelar">❌ Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Auto-preencher data de hoje
+        document.getElementById('data').valueAsDate = new Date();
+    </script>
+</body>
+</html>
+{% endblock %}

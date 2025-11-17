@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Senha Redefinida - Controle Financeiro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 25px;
+            padding: 60px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 4em;
+            margin-bottom: 25px;
+            animation: bounce 1s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .form-title {
+            font-size: 2.2em;
+            font-weight: 800;
+            color: #10b981;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .form-subtitle {
+            color: #666;
+            font-size: 1.05em;
+            margin-bottom: 30px;
+        }
+
+        .success-message {
+            background: #dcfce7;
+            border: 2.5px solid #10b981;
+            color: #166534;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 35px;
+            font-size: 1em;
+            line-height: 1.7;
+        }
+
+        .success-message strong {
+            display: block;
+            color: #10b981;
+            margin-bottom: 12px;
+            font-weight: 800;
+            font-size: 1.1em;
+        }
+
+        .info-box {
+            background: #f0f8ff;
+            border-left: 5px solid #17a2b8;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            color: #333;
+            font-size: 0.95em;
+            line-height: 1.7;
+            text-align: left;
+        }
+
+        .info-box strong {
+            color: #17a2b8;
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .info-box li {
+            margin: 8px 0;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-weight: 800;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(23, 162, 184, 0.35);
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(23, 162, 184, 0.45);
+        }
+
+        .btn-login:active {
+            transform: translateY(-1px);
+        }
+
+        .countdown {
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 25px;
+        }
+
+        @media (max-width: 600px) {
+            .form-card {
+                padding: 40px 30px;
+                border-radius: 20px;
+            }
+
+            .form-title {
+                font-size: 1.8em;
+            }
+
+            .form-subtitle {
+                font-size: 0.95em;
+            }
+
+            .success-icon {
+                font-size: 3em;
+                margin-bottom: 20px;
+            }
+
+            .success-message {
+                padding: 20px;
+                font-size: 0.95em;
+            }
+
+            .info-box {
+                padding: 18px;
+                font-size: 0.9em;
+            }
+
+            .btn-login {
+                padding: 16px;
+                font-size: 1.05em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <div class="success-icon">✅</div>
+            
+            <h1 class="form-title">Senha Redefinida!</h1>
+            <p class="form-subtitle">Sua senha foi alterada com sucesso</p>
+
+            <div class="success-message">
+                <strong>🎉 Parabéns!</strong>
+                Sua senha foi redefinida com sucesso. Você pode fazer login com sua nova senha agora mesmo.
+            </div>
+
+            <div class="info-box">
+                <strong>💡 Dicas de segurança:</strong>
+                <ul>
+                    <li>✓ Sua antiga senha não funciona mais</li>
+                    <li>✓ Guarde sua nova senha em local seguro</li>
+                    <li>✓ Não compartilhe sua senha com ninguém</li>
+                    <li>✓ Use uma senha única para cada serviço</li>
+                </ul>
+            </div>
+
+            <a href="{{ url_for('login') }}" class="btn-login">🔓 Ir para Login</a>
+
+            <p class="countdown">
+                ⏰ Você será redirecionado automaticamente em <span id="countdown">5</span> segundos...
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let count = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const interval = setInterval(() => {
+            count--;
+            countdownElement.textContent = count;
+            
+            if (count <= 0) {
+                clearInterval(interval);
+                window.location.href = "{{ url_for('login') }}";
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}Transferência - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .erro {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            border-radius: 6px;
+            color: #7f1d1d;
+            margin-bottom: 20px;
+        }
+
+        .setas {
+            text-align: center;
+            font-size: 2em;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-enviar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancelar {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 600px) {
+            .form-container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>💸 Transferência Entre Bancos</h2>
+
+        <div class="info-box">
+            <p>💡 <strong>Dica:</strong> Use este formulário para transferir dinheiro de um banco para outro.</p>
+        </div>
+
+        {% if erro %}
+            <div class="erro">⚠️ {{ erro }}</div>
+        {% endif %}
+
+        {% if bancos %}
+            <form method="POST" action="{{ url_for('transferencia') }}">
+                <div class="form-group">
+                    <label for="banco_origem">Banco de Origem *</label>
+                    <select id="banco_origem" name="banco_origem" required>
+                        <option value="">-- Selecione o banco de origem --</option>
+                        {% for banco in bancos %}
+                            <option value="{{ banco.id }}">{{ banco.nome }} (R$ {{ "%.2f"|format(banco.saldo) }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="setas">⬇️</div>
+
+                <div class="form-group">
+                    <label for="banco_destino">Banco de Destino *</label>
+                    <select id="banco_destino" name="banco_destino" required>
+                        <option value="">-- Selecione o banco de destino --</option>
+                        {% for banco in bancos %}
+                            <option value="{{ banco.id }}">{{ banco.nome }} (R$ {{ "%.2f"|format(banco.saldo) }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="valor">Valor a Transferir (R$) *</label>
+                    <input 
+                        type="number" 
+                        id="valor" 
+                        name="valor" 
+                        placeholder="0.00" 
+                        step="0.01" 
+                        min="0"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="descricao">Descrição (opcional)</label>
+                    <input 
+                        type="text" 
+                        id="descricao" 
+                        name="descricao" 
+                        placeholder="Ex: Rebalanceamento de carteira"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="data">Data *</label>
+                    <input 
+                        type="date" 
+                        id="data" 
+                        name="data" 
+                        required
+                    >
+                </div>
+
+                <div class="botoes">
+                    <button type="submit" class="btn-enviar">✅ Transferir</button>
+                    <a href="{{ url_for('bancos') }}" class="btn btn-cancelar">❌ Cancelar</a>
+                </div>
+            </form>
+        {% else %}
+            <div style="text-align: center; padding: 40px; color: #999;">
+                <p>😕 Você precisa ter pelo menos 2 bancos para fazer uma transferência.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Auto-preencher data de hoje
+        document.getElementById('data').valueAsDate = new Date();
+
+        // Validação para não permitir transferir para o mesmo banco
+        document.getElementById('banco_origem').addEventListener('change', function() {
+            const destino = document.getElementById('banco_destino');
+            destino.addEventListener('change', function() {
+                if (this.value === document.getElementById('banco_origem').value) {
+                    alert('Selecione bancos diferentes!');
+                    this.value = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

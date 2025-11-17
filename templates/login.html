@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Controle Financeiro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            max-width: 1300px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .login-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 25px;
+            padding: 60px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+        }
+
+        .form-title {
+            font-size: 2.8em;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 35px;
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.5px;
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            width: 120px;
+            height: 5px;
+            background: linear-gradient(90deg, #17a2b8 0%, #20c997 100%);
+            border-radius: 3px;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+            margin-top: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 1.02em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.05em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: #fafafa;
+            letter-spacing: 0.2px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #17a2b8;
+            background: white;
+            box-shadow: 0 0 0 5px rgba(23, 162, 184, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .form-input::placeholder {
+            color: #bbb;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-weight: 800;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 35px;
+            box-shadow: 0 8px 20px rgba(23, 162, 184, 0.35);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(23, 162, 184, 0.45);
+        }
+
+        .btn-login:active {
+            transform: translateY(-1px);
+        }
+
+        .form-footer {
+            margin-top: 35px;
+            text-align: center;
+        }
+
+        .form-footer-text {
+            color: #666;
+            font-size: 1em;
+            margin-bottom: 18px;
+        }
+
+        .form-footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .form-link {
+            color: #17a2b8;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        .form-link:hover {
+            color: #138496;
+            text-decoration: underline;
+            transform: translateY(-1px);
+        }
+
+        .erro {
+            background: #fee2e2;
+            border: 2.5px solid #ef4444;
+            color: #7f1d1d;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.98em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .erro-icon {
+            font-size: 1.3em;
+            flex-shrink: 0;
+        }
+
+        .illustration-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .illustration-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1;
+        }
+
+        .circle-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dollar-signs {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            overflow: hidden;
+        }
+
+        .dollar {
+            position: absolute;
+            font-size: 1.8em;
+            opacity: 0.35;
+            animation: float 8s ease-in-out infinite;
+            font-weight: bold;
+        }
+
+        .dollar1 { left: 8%; top: 12%; animation-delay: 0s; }
+        .dollar2 { right: 12%; top: 18%; animation-delay: 0.8s; }
+        .dollar3 { left: 18%; bottom: 22%; animation-delay: 1.6s; }
+        .dollar4 { right: 8%; bottom: 28%; animation-delay: 2.4s; }
+        .dollar5 { left: 32%; top: 28%; animation-delay: 3.2s; }
+        .dollar6 { right: 28%; top: 38%; animation-delay: 4s; }
+        .dollar7 { left: 12%; top: 48%; animation-delay: 4.8s; }
+        .dollar8 { right: 18%; bottom: 12%; animation-delay: 5.6s; }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0) rotate(0deg);
+                opacity: 0.35;
+            }
+            50% { 
+                transform: translateY(-25px) rotate(8deg);
+                opacity: 0.5;
+            }
+        }
+
+        .dog-image {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            z-index: 20;
+            animation: bounce 3s ease-in-out infinite;
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.02); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .illustration-section {
+                display: flex;
+                max-width: 350px;
+                margin: 0 auto;
+            }
+
+            .illustration-container {
+                max-width: 350px;
+            }
+
+            .form-card {
+                padding: 50px;
+            }
+
+            .form-title {
+                font-size: 2.2em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-card {
+                padding: 40px 35px;
+            }
+
+            .form-title {
+                font-size: 2em;
+            }
+
+            .form-title::after {
+                width: 80px;
+                bottom: -10px;
+            }
+
+            .form-group {
+                margin-bottom: 22px;
+                margin-top: 18px;
+            }
+
+            .form-label {
+                font-size: 0.95em;
+            }
+
+            .form-input {
+                padding: 14px 18px;
+                font-size: 1em;
+            }
+
+            .btn-login {
+                padding: 16px;
+                font-size: 1.05em;
+                margin-top: 28px;
+            }
+
+            .illustration-section {
+                display: none;
+            }
+        }
+
+        @media (max-width: 500px) {
+            .form-card {
+                padding: 30px 25px;
+                border-radius: 20px;
+            }
+
+            .form-title {
+                font-size: 1.8em;
+                margin-bottom: 25px;
+            }
+
+            .form-title::after {
+                width: 60px;
+                bottom: -8px;
+                height: 4px;
+            }
+
+            .form-group {
+                margin-bottom: 18px;
+                margin-top: 14px;
+            }
+
+            .form-label {
+                font-size: 0.9em;
+                margin-bottom: 8px;
+            }
+
+            .form-input {
+                padding: 12px 15px;
+                font-size: 16px;
+                border-radius: 10px;
+            }
+
+            .btn-login {
+                padding: 14px;
+                font-size: 1em;
+                margin-top: 22px;
+            }
+
+            .form-footer-links {
+                gap: 18px;
+                font-size: 0.9em;
+            }
+
+            .form-link {
+                font-size: 0.95em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Seção de Login -->
+        <div class="login-section">
+            <div class="form-card">
+                <h1 class="form-title">Login</h1>
+
+                {% if erro %}
+                    <div class="erro">
+                        <span class="erro-icon">⚠️</span>
+                        <span>{{ erro }}</span>
+                    </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="form-group">
+                        <label class="form-label">📧 Seu e-mail</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            class="form-input"
+                            placeholder="seu@email.com"
+                            required
+                            autofocus
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🔐 Sua senha</label>
+                        <input 
+                            type="password" 
+                            name="senha" 
+                            class="form-input"
+                            placeholder="••••••••"
+                            required
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-login">🔓 Entrar</button>
+                </form>
+
+                <div class="form-footer">
+                    <p class="form-footer-text">Não tem conta ou esqueceu a senha?</p>
+                    <div class="form-footer-links">
+                        <a href="{{ url_for('registrar') }}" class="form-link">📝 Criar conta</a>
+                        <span style="color: #ddd; user-select: none;">•</span>
+                        <a href="{{ url_for('esqueci_senha') }}" class="form-link">🔄 Recuperar senha</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Ilustração -->
+        <div class="illustration-section">
+            <div class="illustration-container">
+                <div class="circle-bg">
+                    <div class="dollar-signs">
+                        <span class="dollar dollar1">$</span>
+                        <span class="dollar dollar2">$</span>
+                        <span class="dollar dollar3">$</span>
+                        <span class="dollar dollar4">$</span>
+                        <span class="dollar dollar5">$</span>
+                        <span class="dollar dollar6">$</span>
+                        <span class="dollar dollar7">$</span>
+                        <span class="dollar dollar8">$</span>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/dog-mascot.png') }}" alt="Dog Mascot" class="dog-image">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

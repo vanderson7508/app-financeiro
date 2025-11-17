@@ -1,45 +1,298 @@
 {% extends "base.html" %}
 
-{% block title %}Minhas Transações{% endblock %}
+{% block title %}Transações - Controle Financeiro{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2>Minhas Transações</h2>
+<style>
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
 
-        {% if transacoes %}
+    .page-title {
+        font-size: 1.8em;
+        font-weight: 700;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-adicionar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-adicionar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    th {
+        padding: 18px 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.95em;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        padding: 15px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+        background: #f9f9f9;
+    }
+
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .data-cell {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .descricao-cell {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .categoria-cell {
+        display: inline-block;
+        background: #f0f4ff;
+        color: #667eea;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    .tipo-receita {
+        color: #10b981;
+        font-weight: 600;
+    }
+
+    .tipo-despesa {
+        color: #ef4444;
+        font-weight: 600;
+    }
+
+    .valor-receita {
+        color: #10b981;
+        font-weight: 700;
+    }
+
+    .valor-despesa {
+        color: #ef4444;
+        font-weight: 700;
+    }
+
+    .forma-pagamento {
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .actions-cell {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-action {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-editar {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-editar:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+    }
+
+    .btn-deletar {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-deletar:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .empty-state-icon {
+        font-size: 3em;
+        margin-bottom: 20px;
+    }
+
+    .empty-state-title {
+        font-size: 1.3em;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #666;
+    }
+
+    .empty-state-text {
+        margin-bottom: 30px;
+    }
+
+    .btn-adicionar-vazio {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .header-section {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-title {
+            font-size: 1.3em;
+        }
+
+        table {
+            font-size: 0.9em;
+        }
+
+        th, td {
+            padding: 10px 8px;
+        }
+
+        .actions-cell {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="header-section">
+    <h1 class="page-title">📋 Minhas Transações</h1>
+    <a href="{{ url_for('adicionar') }}" class="btn-adicionar">➕ Nova Transação</a>
+</div>
+
+{% if transacoes %}
+    <div class="table-container">
+        <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
-                        <th>Data</th>
-                        <th>Descrição</th>
-                        <th>Categoria</th>
-                        <th>Tipo</th>
-                        <th>Forma de Pagamento</th>
-                        <th>Valor</th>
-                        <th>Ações</th>
+                        <th>📅 Data</th>
+                        <th>📝 Descrição</th>
+                        <th>📂 Categoria</th>
+                        <th>📊 Tipo</th>
+                        <th>💳 Forma de Pagamento</th>
+                        <th>💵 Valor</th>
+                        <th>⚙️ Ações</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for transacao in transacoes %}
+                    {% for transacao in transacoes|reverse %}
                     <tr>
-                        <td>{{ transacao.data.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ transacao.descricao }}</td>
-                        <td>{{ transacao.categoria }}</td>
-                        <td>{{ transacao.tipo }}</td>
-                        <td>{{ transacao.forma_pagamento }}</td>
-                        <td>R$ {{ "%.2f"|format(transacao.valor) }}</td>
-                       <td>
-                          <a href="{{ url_for('editar', id=transacao.id) }}" class="btn-pequeno">Editar</a>
-                          <form method="POST" action="{{ url_for('deletar', id=transacao.id) }}" style="display:inline;" onsubmit="return confirm('Tem certeza que quer deletar?');">
-                              <button type="submit" class="btn-deletar">Deletar</button>
-                          </form>
-                       </td>
+                        <td class="data-cell">{{ transacao.data.strftime('%d/%m/%Y') }}</td>
+                        <td class="descricao-cell">{{ transacao.descricao }}</td>
+                        <td><span class="categoria-cell">{{ transacao.categoria }}</span></td>
+                        <td class="{% if transacao.tipo == 'Receita' %}tipo-receita{% else %}tipo-despesa{% endif %}">
+                            {{ transacao.tipo }}
+                        </td>
+                        <td class="forma-pagamento">{{ transacao.forma_pagamento }}</td>
+                        <td class="{% if transacao.tipo == 'Receita' %}valor-receita{% else %}valor-despesa{% endif %}">
+                            {% if transacao.tipo == 'Receita' %}+{% else %}-{% endif %} R$ {{ "%.2f"|format(transacao.valor) }}
+                        </td>
+                        <td class="actions-cell">
+                            <a href="{{ url_for('editar', id=transacao.id) }}" class="btn-action btn-editar">
+                                ✏️ Editar
+                            </a>
+                            <form method="POST" action="{{ url_for('deletar', id=transacao.id) }}" style="margin: 0;" onsubmit="return confirm('Tem certeza que deseja deletar?');">
+                                <button type="submit" class="btn-action btn-deletar">
+                                    🗑️ Deletar
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        {% else %}
-            <p>Nenhuma transação adicionada ainda.</p>
-        {% endif %}
+        </div>
     </div>
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <div class="empty-state-title">Nenhuma transação cadastrada</div>
+        <div class="empty-state-text">Comece adicionando sua primeira transação para acompanhar suas finanças</div>
+        <a href="{{ url_for('adicionar') }}" class="btn-adicionar-vazio">➕ Adicionar Transação</a>
+    </div>
+{% endif %}
+
 {% endblock %}

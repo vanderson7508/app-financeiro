@@ -1,30 +1,312 @@
 {% extends "base.html" %}
 
-{% block title %}Início - Controle Financeiro{% endblock %}
+{% block title %}Home - Controle Financeiro{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h2>Bem-vindo ao seu Controle Financeiro!</h2>
+<style>
+    .welcome-header {
+        background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
 
-        <div class="resumo">
-            <div class="card">
-                <h3>Total de Receitas</h3>
-                <p class="valor">R$ {{ "%.2f"|format(total_receitas) }}</p>
-            </div>
+    .welcome-header h1 {
+        font-size: 1.5em;
+        margin-bottom: 0.5rem;
+    }
 
-            <div class="card">
-                <h3>Total de Despesas</h3>
-                <p class="valor">R$ {{ "%.2f"|format(total_despesas) }}</p>
-            </div>
+    .welcome-header p {
+        font-size: 0.95em;
+        opacity: 0.9;
+    }
 
-            <div class="card">
-                <h3>Saldo</h3>
-                <p class="valor">R$ {{ "%.2f"|format(saldo) }}</p>
-            </div>
-        </div>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
 
-        <p>
-            <a href="{{ url_for('adicionar') }}" class="btn">Adicionar Transação</a>
-        </p>
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .stat-card-title {
+        font-size: 0.85em;
+        color: #666;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-card-value {
+        font-size: 1.8em;
+        font-weight: 700;
+        color: #17a2b8;
+    }
+
+    .stat-card.success .stat-card-value {
+        color: #10b981;
+    }
+
+    .stat-card.danger .stat-card-value {
+        color: #ef4444;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .quick-action-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #2c3e50;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 0.9em;
+    }
+
+    .quick-action-btn:active {
+        background: #f0f8ff;
+        border-color: #17a2b8;
+        color: #17a2b8;
+    }
+
+    .quick-action-icon {
+        font-size: 1.8em;
+    }
+
+    .section-title {
+        font-size: 1.2em;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        margin-top: 1.5rem;
+        color: #2c3e50;
+    }
+
+    .transaction-item {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .transaction-info {
+        flex: 1;
+    }
+
+    .transaction-desc {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+
+    .transaction-category {
+        font-size: 0.85em;
+        color: #666;
+    }
+
+    .transaction-valor {
+        font-weight: 700;
+        font-size: 1.1em;
+        text-align: right;
+    }
+
+    .transaction-valor.receita {
+        color: #10b981;
+    }
+
+    .transaction-valor.despesa {
+        color: #ef4444;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: #666;
+    }
+
+    .empty-state-icon {
+        font-size: 3em;
+        margin-bottom: 1rem;
+    }
+
+    .cta-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 700;
+        margin-top: 1rem;
+    }
+
+    /* Responsive */
+    @media (min-width: 640px) {
+        .stats-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .quick-actions {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .welcome-header {
+            text-align: left;
+        }
+
+        .welcome-header h1 {
+            font-size: 2em;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+        }
+    }
+</style>
+
+{% if current_user.is_authenticated %}
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+        <h1>Bem-vindo, {{ current_user.nome }}! 👋</h1>
+        <p>Aqui está um resumo da sua situação financeira</p>
     </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-card-title">Saldo Total</div>
+            <div class="stat-card-value">R$ {{ "%.2f"|format(saldo) }}</div>
+        </div>
+        
+        <div class="stat-card success">
+            <div class="stat-card-title">Receitas</div>
+            <div class="stat-card-value">R$ {{ "%.2f"|format(total_receitas) }}</div>
+        </div>
+        
+        <div class="stat-card danger">
+            <div class="stat-card-title">Despesas</div>
+            <div class="stat-card-value">R$ {{ "%.2f"|format(total_despesas) }}</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-card-title">Transações</div>
+            <div class="stat-card-value">{{ quantidade_transacoes }}</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h2 class="section-title">Ações Rápidas</h2>
+    <div class="quick-actions">
+        <a href="{{ url_for('adicionar') }}" class="quick-action-btn">
+            <div class="quick-action-icon">➕</div>
+            <div>Adicionar</div>
+        </a>
+        <a href="{{ url_for('bancos') }}" class="quick-action-btn">
+            <div class="quick-action-icon">🏦</div>
+            <div>Bancos</div>
+        </a>
+        <a href="{{ url_for('cartoes') }}" class="quick-action-btn">
+            <div class="quick-action-icon">💳</div>
+            <div>Cartões</div>
+        </a>
+        <a href="{{ url_for('relatorios') }}" class="quick-action-btn">
+            <div class="quick-action-icon">📊</div>
+            <div>Relatórios</div>
+        </a>
+    </div>
+
+    <!-- Últimas Transações -->
+    <h2 class="section-title">Últimas Transações</h2>
+    
+    {% if quantidade_transacoes > 0 %}
+        <div id="transacoes-list">
+            <!-- As transações serão carregadas aqui -->
+        </div>
+        <a href="{{ url_for('lista_transacoes') }}" class="cta-button">
+            Ver todas as transações →
+        </a>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <p>Nenhuma transação registrada ainda</p>
+            <a href="{{ url_for('adicionar') }}" class="cta-button">
+                Adicione sua primeira transação
+            </a>
+        </div>
+    {% endif %}
+
+    <script>
+        // Aqui você pode carregar transações via AJAX se quiser
+        // Por enquanto, deixa em branco para evitar erro
+    </script>
+
+{% else %}
+    <!-- Not Logged In -->
+    <div class="welcome-header" style="text-align: center;">
+        <h1>Bem-vindo ao Controle Financeiro! 💰</h1>
+        <p>Gerencie suas finanças de forma simples e eficaz</p>
+    </div>
+
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 1.5rem;">Comece agora</h2>
+        <a href="{{ url_for('registrar') }}" class="btn btn-full btn-secondary" style="margin-bottom: 1rem;">
+            📝 Criar Conta Gratuita
+        </a>
+        <p style="text-align: center; color: #666; margin-bottom: 1rem;">Já tem conta?</p>
+        <a href="{{ url_for('login') }}" class="btn btn-full">
+            🔐 Fazer Login
+        </a>
+    </div>
+
+    <div class="card">
+        <h3>✨ Recursos Principais</h3>
+        <ul style="list-style: none; padding: 0; margin-top: 1rem;">
+            <li style="padding: 0.75rem 0; border-bottom: 1px solid #e0e0e0;">
+                <strong>📊 Controle Total</strong><br>
+                <small style="color: #666;">Registre e acompanhe todas as suas transações</small>
+            </li>
+            <li style="padding: 0.75rem 0; border-bottom: 1px solid #e0e0e0;">
+                <strong>🏦 Múltiplas Contas</strong><br>
+                <small style="color: #666;">Gerencie vários bancos e cartões em um só lugar</small>
+            </li>
+            <li style="padding: 0.75rem 0; border-bottom: 1px solid #e0e0e0;">
+                <strong>📈 Relatórios Detalhados</strong><br>
+                <small style="color: #666;">Visualize gráficos e análises de seus gastos</small>
+            </li>
+            <li style="padding: 0.75rem 0;">
+                <strong>🎯 Orçamentos</strong><br>
+                <small style="color: #666;">Defina limites e controle seus gastos por categoria</small>
+            </li>
+        </ul>
+    </div>
+
+{% endif %}
 {% endblock %}

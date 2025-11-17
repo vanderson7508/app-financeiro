@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Orçamento - Financeiro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .btn-enviar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancelar {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #d0d0d0;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .info-box p {
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            .content {
+                padding: 25px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>➕ Novo Orçamento</h1>
+            <p>Defina um limite de gastos para uma categoria</p>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <p>💡 <strong>Dica:</strong> Defina orçamentos para as categorias onde você mais gasta. Você será alertado quando estiver próximo do limite!</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('criar_orcamento') }}">
+                <div class="form-group">
+                    <label for="categoria">Categoria *</label>
+                    <select id="categoria" name="categoria" required>
+                        <option value="">-- Selecione uma categoria --</option>
+                        {% for cat in categorias %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="limite">Limite Mensal (R$) *</label>
+                    <input 
+                        type="number" 
+                        id="limite" 
+                        name="limite" 
+                        placeholder="Ex: 500.00" 
+                        step="0.01" 
+                        min="0"
+                        required
+                    >
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mes">Mês *</label>
+                        <select id="mes" name="mes" required>
+                            <option value="1" {% if mes_padrao == 1 %}selected{% endif %}>Janeiro</option>
+                            <option value="2" {% if mes_padrao == 2 %}selected{% endif %}>Fevereiro</option>
+                            <option value="3" {% if mes_padrao == 3 %}selected{% endif %}>Março</option>
+                            <option value="4" {% if mes_padrao == 4 %}selected{% endif %}>Abril</option>
+                            <option value="5" {% if mes_padrao == 5 %}selected{% endif %}>Maio</option>
+                            <option value="6" {% if mes_padrao == 6 %}selected{% endif %}>Junho</option>
+                            <option value="7" {% if mes_padrao == 7 %}selected{% endif %}>Julho</option>
+                            <option value="8" {% if mes_padrao == 8 %}selected{% endif %}>Agosto</option>
+                            <option value="9" {% if mes_padrao == 9 %}selected{% endif %}>Setembro</option>
+                            <option value="10" {% if mes_padrao == 10 %}selected{% endif %}>Outubro</option>
+                            <option value="11" {% if mes_padrao == 11 %}selected{% endif %}>Novembro</option>
+                            <option value="12" {% if mes_padrao == 12 %}selected{% endif %}>Dezembro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="ano">Ano *</label>
+                        <select id="ano" name="ano" required>
+                            {% for y in range(2024, 2030) %}
+                                <option value="{{ y }}" {% if ano_padrao == y %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="botoes">
+                    <button type="submit" class="btn-enviar">✅ Criar Orçamento</button>
+                    <a href="{{ url_for('orcamentos') }}" class="btn btn-cancelar">❌ Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

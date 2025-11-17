@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}Nova Recorrência - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .form-container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-enviar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancelar {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 700px) {
+            .form-container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .form-row,
+            .form-row-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>➕ Nova Recorrência</h2>
+
+        <div class="info-box">
+            <p>💡 <strong>Como funciona:</strong> Registre receitas e despesas que se repetem periodicamente. Elas aparecerão automaticamente na projeção mensal.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('criar_recorrencia') }}">
+            <div class="form-group">
+                <label for="descricao">Descrição *</label>
+                <input 
+                    type="text" 
+                    id="descricao" 
+                    name="descricao" 
+                    placeholder="Ex: Salário, Aluguel, Internet" 
+                    required
+                >
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="valor">Valor (R$) *</label>
+                    <input 
+                        type="number" 
+                        id="valor" 
+                        name="valor" 
+                        placeholder="0.00" 
+                        step="0.01" 
+                        min="0"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="tipo">Tipo *</label>
+                    <select id="tipo" name="tipo" required>
+                        <option value="">-- Selecione --</option>
+                        <option value="Receita">Receita</option>
+                        <option value="Despesa">Despesa</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="categoria">Categoria *</label>
+                    <select id="categoria" name="categoria" required>
+                        <option value="">-- Selecione uma categoria --</option>
+                        {% for cat in categorias %}
+                            <option value="{{ cat.nome }}">{{ cat.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="forma_pagamento">Forma de Pagamento *</label>
+                    <select id="forma_pagamento" name="forma_pagamento" required>
+                        <option value="">-- Selecione --</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Débito">Débito</option>
+                        <option value="Crédito">Crédito</option>
+                        <option value="Cartão de Crédito">Cartão de Crédito</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="frequencia">Frequência *</label>
+                    <select id="frequencia" name="frequencia" required>
+                        <option value="">-- Selecione --</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="bimestral">Bimestral (a cada 2 meses)</option>
+                        <option value="trimestral">Trimestral (a cada 3 meses)</option>
+                        <option value="semestral">Semestral (a cada 6 meses)</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dia_vencimento">Dia do Mês *</label>
+                    <input 
+                        type="number" 
+                        id="dia_vencimento" 
+                        name="dia_vencimento" 
+                        min="1" 
+                        max="31" 
+                        placeholder="Ex: 10" 
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="data_inicio">Data de Início *</label>
+                    <input 
+                        type="date" 
+                        id="data_inicio" 
+                        name="data_inicio" 
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="data_fim">Data de Fim (opcional)</label>
+                    <input 
+                        type="date" 
+                        id="data_fim" 
+                        name="data_fim"
+                    >
+                </div>
+            </div>
+
+            <div class="botoes">
+                <button type="submit" class="btn-enviar">✅ Criar Recorrência</button>
+                <a href="{{ url_for('recorrencias') }}" class="btn btn-cancelar">❌ Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Auto-preencher data de hoje
+        document.getElementById('data_inicio').valueAsDate = new Date();
+    </script>
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,440 @@
+{% extends "base.html" %}
+{% block title %}Dívidas Parceladas - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .dividas-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .dividas-header {
+            margin-bottom: 30px;
+        }
+
+        .dividas-header h2 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .dividas-header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .seletor-mes {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .seletor-mes label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .seletor-mes select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .seletor-mes select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .resumo-dividas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card-resumo {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border-top: 4px solid;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-resumo h3 {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .card-resumo .valor {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .card-resumo.total {
+            border-top-color: #ef4444;
+        }
+
+        .card-resumo.total .valor {
+            color: #ef4444;
+        }
+
+        .card-resumo.quantidade {
+            border-top-color: #f59e0b;
+        }
+
+        .card-resumo.quantidade .valor {
+            color: #f59e0b;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .info-box p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .mes-grupo {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .mes-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .mes-titulo {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .mes-info {
+            display: flex;
+            gap: 20px;
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .mes-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .mes-total {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .parcelas-list {
+            padding: 20px;
+        }
+
+        .parcelas-list-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            font-size: 0.9em;
+        }
+
+        .parcela-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        .parcela-item:last-child {
+            border-bottom: none;
+        }
+
+        .parcela-item:hover {
+            background: #f9f9f9;
+        }
+
+        .parcela-descricao {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .parcela-cartao {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .parcela-numero {
+            text-align: center;
+            background: #f0f4ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .parcelas-faltando {
+            text-align: center;
+            background: #fef3c7;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: #92400e;
+            font-weight: 600;
+        }
+
+        .parcela-valor {
+            text-align: right;
+            font-weight: 600;
+            color: #ef4444;
+        }
+
+        .parcela-categoria {
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .sem-dividas {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .sem-dividas p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .datas-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .navegacao {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: 12px 25px;
+            background: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 1000px) {
+            .parcelas-list-header,
+            .parcela-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .parcela-item > *::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #666;
+                min-width: 100px;
+                display: inline-block;
+            }
+
+            .mes-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .mes-info {
+                justify-content: center;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .seletor-mes {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .seletor-mes select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dividas-container">
+        <div class="dividas-header">
+            <h2>📊 Dívidas Parceladas em Aberto</h2>
+            <p>Acompanhe as parcelas que ainda faltam pagar</p>
+        </div>
+
+        <div class="info-box">
+            <p>💡 <strong>Como funciona:</strong> Aqui aparecem apenas as parcelas a partir da 2ª (primeira parcela aparece no mês de compra). Selecione o mês para ver quais parcelas vencem.</p>
+        </div>
+
+        <!-- SELETOR DE MÊS -->
+        <div class="seletor-mes">
+            <label for="mes-select">Visualizar mês:</label>
+            <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <select name="mes" id="mes-select" onchange="this.form.submit()">
+                    <option value="1" {% if mes_selecionado == 1 %}selected{% endif %}>Janeiro</option>
+                    <option value="2" {% if mes_selecionado == 2 %}selected{% endif %}>Fevereiro</option>
+                    <option value="3" {% if mes_selecionado == 3 %}selected{% endif %}>Março</option>
+                    <option value="4" {% if mes_selecionado == 4 %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes_selecionado == 5 %}selected{% endif %}>Maio</option>
+                    <option value="6" {% if mes_selecionado == 6 %}selected{% endif %}>Junho</option>
+                    <option value="7" {% if mes_selecionado == 7 %}selected{% endif %}>Julho</option>
+                    <option value="8" {% if mes_selecionado == 8 %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes_selecionado == 9 %}selected{% endif %}>Setembro</option>
+                    <option value="10" {% if mes_selecionado == 10 %}selected{% endif %}>Outubro</option>
+                    <option value="11" {% if mes_selecionado == 11 %}selected{% endif %}>Novembro</option>
+                    <option value="12" {% if mes_selecionado == 12 %}selected{% endif %}>Dezembro</option>
+                </select>
+
+                <select name="ano" onchange="this.form.submit()">
+                    {% for y in range(2024, 2030) %}
+                        <option value="{{ y }}" {% if ano_selecionado == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        <!-- RESULTADO -->
+        {% if mes_selecionado_data %}
+            <div class="resumo-dividas">
+                <div class="card-resumo total">
+                    <h3>❌ Valor Total do Mês</h3>
+                    <div class="valor">R$ {{ "%.2f"|format(total_dividas) }}</div>
+                </div>
+
+                <div class="card-resumo quantidade">
+                    <h3>📋 Parcelas Neste Mês</h3>
+                    <div class="valor">{{ total_parcelas }}</div>
+                </div>
+            </div>
+
+            <div class="mes-grupo">
+                <div class="mes-header">
+                    <div class="mes-titulo">📅 {{ mes_selecionado_data.mes }} de {{ mes_selecionado_data.ano }}</div>
+                    <div class="mes-info">
+                        <span>📆 Fechamento: {{ mes_selecionado_data.data_fechamento.strftime('%d/%m/%Y') }}</span>
+                        <span>💳 Vencimento: {{ mes_selecionado_data.data_vencimento.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                    <div class="mes-total">R$ {{ "%.2f"|format(mes_selecionado_data.total_mes) }}</div>
+                </div>
+
+                <div class="parcelas-list">
+                    {% if mes_selecionado_data.parcelas %}
+                        <div class="parcelas-list-header">
+                            <div>Descrição</div>
+                            <div>Parcela</div>
+                            <div>Faltando</div>
+                            <div>Valor</div>
+                            <div>Categoria</div>
+                        </div>
+
+                        {% for parcela in mes_selecionado_data.parcelas %}
+                            <div class="parcela-item">
+                                <div>
+                                    <div class="parcela-descricao">{{ parcela.descricao }}</div>
+                                    <div class="parcela-cartao">{{ parcela.cartao }} • Comprado em: {{ parcela.data_compra.strftime('%d/%m/%Y') }}</div>
+                                </div>
+                                <div class="parcela-numero" data-label="Parcela:">
+                                    {{ parcela.numero_parcela }}/{{ parcela.quantidade_parcelas }}
+                                </div>
+                                <div class="parcelas-faltando" data-label="Faltando:">
+                                    {% if parcela.parcelas_faltando == 0 %}
+                                        ✅ Última
+                                    {% else %}
+                                        ⏳ {{ parcela.parcelas_faltando }}
+                                    {% endif %}
+                                </div>
+                                <div class="parcela-valor" data-label="Valor:">
+                                    R$ {{ "%.2f"|format(parcela.valor_parcela) }}
+                                </div>
+                                <div class="parcela-categoria" data-label="Categoria:">
+                                    {{ parcela.categoria }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="sem-dividas">
+                            <p>🎉 Nenhuma parcela para este mês!</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="datas-info">
+                    💡 <strong>Dica:</strong> Todas essas parcelas vencem em <strong>{{ mes_selecionado_data.data_vencimento.strftime('%d/%m/%Y') }}</strong>
+                </div>
+            </div>
+
+        {% else %}
+            <div class="mes-grupo">
+                <div class="sem-dividas">
+                    <p>🎉 Nenhuma parcela para este mês!</p>
+                    <p>Todas as suas compras estão quitadas ou não têm parcelas neste período.</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="navegacao">
+            <a href="{{ url_for('home') }}" class="nav-link">← Voltar para Home</a>
+            <a href="{{ url_for('cartoes') }}" class="nav-link">💳 Meus Cartões</a>
+            <a href="{{ url_for('compras_cartao') }}" class="nav-link">🛍️ Compras no Cartão</a>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}

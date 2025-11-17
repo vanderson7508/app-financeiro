@@ -1,48 +1,446 @@
 {% extends "base.html" %}
-
-{% block title %}Adicionar Transação{% endblock %}
-
+{% block title %}Adicionar Transação - Financeiro{% endblock %}
 {% block content %}
-    <div class="container">
-        <h2>Adicionar Nova Transação</h2>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .form-container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
 
-        <form method="POST">
-            <label for="descricao">Descrição:</label>
-            <input type="text" id="descricao" name="descricao" required>
+        .form-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8em;
+        }
 
-            <label for="valor">Valor:</label>
-            <input type="number" id="valor" name="valor" step="0.01" required>
+        .form-group {
+            margin-bottom: 25px;
+        }
 
-            <label for="categoria">Categoria:</label>
-            <select id="categoria" name="categoria" required>
-                <option value="">-- Selecione --</option>
-                <option value="Alimentação">Alimentação</option>
-                <option value="Transporte">Transporte</option>
-                <option value="Saúde">Saúde</option>
-                <option value="Trabalho">Trabalho/Renda</option>
-                <option value="Investimentos">Investimentos</option>
-                <option value="Outro">Outro</option>
-            </select>
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
 
-            <label for="tipo">Tipo:</label>
-            <select id="tipo" name="tipo" required>
-                <option value="">-- Selecione --</option>
-                <option value="Despesa">Despesa</option>
-                <option value="Receita">Receita</option>
-            </select>
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
 
-            <label for="forma_pagamento">Forma de Pagamento:</label>
-            <select id="forma_pagamento" name="forma_pagamento" required>
-                <option value="">-- Selecione --</option>
-                <option value="Dinheiro">Dinheiro</option>
-                <option value="Débito">Débito</option>
-                <option value="Crédito">Crédito</option>
-            </select>
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-            <label for="data">Data:</label>
-            <input type="date" id="data" name="data" required>
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
 
-            <button type="submit">Adicionar Transação</button>
+        .cartao-fields {
+            display: none;
+        }
+
+        .cartao-fields.ativo {
+            display: block;
+        }
+
+        .banco-fields {
+            display: none;
+        }
+
+        .banco-fields.ativo {
+            display: block;
+        }
+
+        .recorrencia-fields {
+            display: none;
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .recorrencia-fields.ativo {
+            display: block;
+        }
+
+        .recorrencia-info {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 0.85em;
+            line-height: 1.6;
+            border-left: 3px solid #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 6px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 0.85em;
+            line-height: 1.6;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-enviar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancelar {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-nova {
+            padding: 12px 15px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            white-space: nowrap;
+            font-size: 0.9em;
+            flex: 0 0 auto;
+        }
+
+        .categoria-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .categoria-wrapper select {
+            flex: 1;
+        }
+
+        @media (max-width: 700px) {
+            .form-container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+
+            .categoria-wrapper {
+                flex-direction: column;
+            }
+
+            .categoria-wrapper .btn-nova {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>➕ Adicionar Transação</h2>
+
+        <form method="POST" action="{{ url_for('adicionar') }}">
+            <div class="form-group">
+                <label for="descricao">Descrição *</label>
+                <input
+                    type="text"
+                    id="descricao"
+                    name="descricao"
+                    placeholder="Ex: Compra no supermercado"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="valor">Valor (R$) *</label>
+                <input
+                    type="number"
+                    id="valor"
+                    name="valor"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="categoria">Categoria *</label>
+                <div class="categoria-wrapper">
+                    <select id="categoria" name="categoria" required>
+                        <option value="">-- Selecione uma categoria --</option>
+                        {% for cat in categorias %}
+                            <option value="{{ cat.nome }}">{{ cat.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <a href="{{ url_for('criar_categoria') }}" class="btn-nova">➕ Nova</a>
+                </div>
+            </div>
+
+            <div class="form-group" id="tipo-group">
+                <label for="tipo">Tipo *</label>
+                <select id="tipo" name="tipo" required onchange="toggleBancoFields()">
+                    <option value="">-- Selecione um tipo --</option>
+                    <option value="Receita">Receita</option>
+                    <option value="Despesa">Despesa</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="forma_pagamento">Forma de Pagamento *</label>
+                <select id="forma_pagamento" name="forma_pagamento" required onchange="toggleCartaoFields(); toggleBancoFields();">
+                    <option value="">-- Selecione uma forma --</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                    <option value="Débito">Débito</option>
+                    <option value="Crédito">Crédito</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                </select>
+            </div>
+
+            <!-- CAMPOS ESPECÍFICOS PARA BANCO -->
+            <div class="banco-fields" id="banco-fields">
+                <div class="info-box">
+                    💡 <strong>Dica:</strong> Selecione um banco para registrar essa transação em sua conta. Se deixar em branco, será considerada como carteira física.
+                </div>
+
+                <div class="form-group">
+                    <label for="banco_id">Qual Banco? (opcional)</label>
+                    <select id="banco_id" name="banco_id">
+                        <option value="">-- Carteira Física (sem banco) --</option>
+                        {% for banco in bancos %}
+                            <option value="{{ banco.id }}">{{ banco.nome }} (R$ {{ "%.2f"|format(banco.saldo) }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- CAMPOS ESPECÍFICOS PARA CARTÃO DE CRÉDITO -->
+            <div class="cartao-fields" id="cartao-fields">
+                <div class="form-group">
+                    <label for="cartao_id">Qual Cartão? *</label>
+                    <select id="cartao_id" name="cartao_id">
+                        <option value="">-- Selecione um cartão --</option>
+                        {% for cartao in cartoes %}
+                            <option value="{{ cartao.id }}">{{ cartao.nome }} (Fecha: {{ cartao.dia_fechamento }}º, Vence: {{ cartao.dia_vencimento }}º)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="quantidade_parcelas">Número de Parcelas *</label>
+                    <input
+                        type="number"
+                        id="quantidade_parcelas"
+                        name="quantidade_parcelas"
+                        value="1"
+                        min="1"
+                        max="24"
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="data">Data *</label>
+                <input
+                    type="date"
+                    id="data"
+                    name="data"
+                    required
+                >
+            </div>
+
+            <!-- CHECKBOX PARA RECORRÊNCIA -->
+            <div class="checkbox-group">
+                <input 
+                    type="checkbox" 
+                    id="eh-recorrente" 
+                    name="eh_recorrente"
+                    onchange="toggleRecorrencia()"
+                >
+                <label for="eh-recorrente">🔄 Adicionar como recorrente?</label>
+            </div>
+
+            <!-- CAMPOS ESPECÍFICOS PARA RECORRÊNCIA -->
+            <div class="recorrencia-fields" id="recorrencia-fields">
+                <div class="recorrencia-info">
+                    💡 <strong>Dica:</strong> Se você marcar como recorrente, essa transação aparecerá automaticamente na projeção mensal conforme a frequência definida.
+                </div>
+
+                <div class="form-group">
+                    <label for="frequencia">Frequência *</label>
+                    <select id="frequencia" name="frequencia">
+                        <option value="">-- Selecione uma frequência --</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="bimestral">Bimestral (a cada 2 meses)</option>
+                        <option value="trimestral">Trimestral (a cada 3 meses)</option>
+                        <option value="semestral">Semestral (a cada 6 meses)</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dia_vencimento">Dia do Mês *</label>
+                    <input 
+                        type="number" 
+                        id="dia_vencimento" 
+                        name="dia_vencimento" 
+                        min="1" 
+                        max="31"
+                        placeholder="Ex: 10"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="data_fim_recorrencia">Data de Término (opcional)</label>
+                    <input 
+                        type="date" 
+                        id="data_fim_recorrencia" 
+                        name="data_fim_recorrencia"
+                    >
+                </div>
+            </div>
+
+            <div class="botoes">
+                <button type="submit" class="btn-enviar">✅ Adicionar</button>
+                <a href="{{ url_for('lista_transacoes') }}" class="btn btn-cancelar">❌ Cancelar</a>
+            </div>
         </form>
     </div>
+
+    <script>
+        // Auto-preencher data de hoje
+        document.getElementById('data').valueAsDate = new Date();
+
+        // Função para mostrar/esconder campos de cartão
+        function toggleCartaoFields() {
+            const formaPagamento = document.getElementById('forma_pagamento').value;
+            const cartaoFields = document.getElementById('cartao-fields');
+            const tipoGroup = document.getElementById('tipo-group');
+
+            if (formaPagamento === 'Cartão de Crédito') {
+                cartaoFields.classList.add('ativo');
+                tipoGroup.style.display = 'none';
+                document.getElementById('tipo').value = 'Despesa';
+            } else {
+                cartaoFields.classList.remove('ativo');
+                tipoGroup.style.display = 'block';
+                document.getElementById('tipo').value = '';
+            }
+        }
+
+        // Função para mostrar/esconder campos de banco
+        function toggleBancoFields() {
+            const formaPagamento = document.getElementById('forma_pagamento').value;
+            const bancoFields = document.getElementById('banco-fields');
+            
+            // Mostrar apenas se NÃO for Cartão de Crédito
+            if (formaPagamento !== 'Cartão de Crédito' && formaPagamento !== '') {
+                bancoFields.classList.add('ativo');
+            } else {
+                bancoFields.classList.remove('ativo');
+            }
+        }
+
+        // Função para mostrar/esconder campos de recorrência
+        function toggleRecorrencia() {
+            const ehRecorrente = document.getElementById('eh-recorrente').checked;
+            const recorrenciaFields = document.getElementById('recorrencia-fields');
+
+            if (ehRecorrente) {
+                recorrenciaFields.classList.add('ativo');
+            } else {
+                recorrenciaFields.classList.remove('ativo');
+            }
+        }
+    </script>
+</body>
+</html>
 {% endblock %}

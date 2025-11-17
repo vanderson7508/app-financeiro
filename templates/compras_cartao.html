@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Compras no Cartão - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .compras-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .compras-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .compras-header h2 {
+            color: #333;
+            font-size: 2em;
+        }
+
+        .btn-nova-compra {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-nova-compra:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .cartao-grupo {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .cartao-grupo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .compras-list {
+            padding: 20px;
+        }
+
+        .compra-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        .compra-item:last-child {
+            border-bottom: none;
+        }
+
+        .compra-descricao {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .compra-data {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .compra-valor {
+            text-align: right;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .compra-parcelas {
+            text-align: center;
+            background: #f0f4ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .compra-status {
+            text-align: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-aberta {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-quitada {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .compra-acoes {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-acao {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-editar-compra {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-editar-compra:hover {
+            background: #2563eb;
+        }
+
+        .btn-deletar-compra {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-deletar-compra:hover {
+            background: #dc2626;
+        }
+
+        .compras-vazias {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .compras-vazias p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .navegacao {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: 12px 25px;
+            background: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 1000px) {
+            .compra-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .compra-item > * {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .compra-item > *::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #666;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="compras-container">
+        <div class="compras-header">
+            <h2>🛍️ Minhas Compras no Cartão</h2>
+            <a href="{{ url_for('criar_compra_cartao') }}" class="btn-nova-compra">➕ Nova Compra</a>
+        </div>
+
+        {% if compras_por_cartao %}
+            {% for cartao_id, grupo in compras_por_cartao.items() %}
+                <div class="cartao-grupo">
+                    <div class="cartao-grupo-header">
+                        💳 {{ grupo.cartao.nome }}
+                    </div>
+                    
+                    <div class="compras-list">
+                        {% for compra in grupo.compras %}
+                            <div class="compra-item">
+                                <div>
+                                    <div class="compra-descricao">{{ compra.descricao }}</div>
+                                    <div class="compra-data">{{ compra.data_compra.strftime('%d/%m/%Y') }}</div>
+                                </div>
+                                <div class="compra-valor" data-label="Valor Total:">R$ {{ "%.2f"|format(compra.valor_total) }}</div>
+                                <div class="compra-parcelas" data-label="Parcelas:">{{ compra.numero_parcela }}/{{ compra.quantidade_parcelas }}</div>
+                                <div class="compra-valor" data-label="Parcela:">R$ {{ "%.2f"|format(compra.valor_parcela) }}</div>
+                                <div class="compra-status" data-label="Status:">
+                                    <span class="status-badge {{ 'status-aberta' if compra.numero_parcela == 1 else 'status-quitada' }}">
+                                        {% if compra.numero_parcela == 1 %}
+                                            ⏳ Em aberto
+                                        {% else %}
+                                            ✅ Registrada
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="compra-acoes" data-label="Ações:">
+                                    <a href="{{ url_for('editar_compra_cartao', id=compra.id) }}" class="btn-acao btn-editar-compra">✏️</a>
+                                    <form method="POST" action="{{ url_for('deletar_compra_cartao', id=compra.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn-acao btn-deletar-compra" onclick="return confirm('Tem certeza?');">🗑️</button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="cartao-grupo">
+                <div class="compras-vazias">
+                    <p>😕 Você ainda não tem compras registradas.</p>
+                    <p>Clique em "Nova Compra" para começar!</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="navegacao">
+            <a href="{{ url_for('home') }}" class="nav-link">← Voltar para Home</a>
+            <a href="{{ url_for('cartoes') }}" class="nav-link">💳 Meus Cartões</a>
+            <a href="{{ url_for('dividas_parceladas') }}" class="nav-link">📊 Dívidas Parceladas</a>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}

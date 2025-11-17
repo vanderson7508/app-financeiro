@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Movimentações - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h2 {
+            color: #333;
+            font-size: 2em;
+        }
+
+        .saldo-info {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border-top: 4px solid #667eea;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .saldo-info h3 {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .saldo-info .valor {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .tabela-movimentacoes {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .tabela-header {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            background: #f8f9fa;
+            padding: 15px 20px;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tabela-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+        }
+
+        .tabela-row:last-child {
+            border-bottom: none;
+        }
+
+        .tabela-row:hover {
+            background: #f9f9f9;
+        }
+
+        .tipo-entrada {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .tipo-saida {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .valor-entrada {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .valor-saida {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .data {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .sem-movimentacoes {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #999;
+        }
+
+        .sem-movimentacoes p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .botoes-acoes {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .btn-acao {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-adicionar {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-adicionar:hover {
+            background: #059669;
+        }
+
+        .btn-sacar {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-sacar:hover {
+            background: #dc2626;
+        }
+
+        .navegacao {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: 12px 25px;
+            background: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .tabela-header,
+            .tabela-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .tabela-header {
+                display: none;
+            }
+
+            .tabela-row {
+                padding: 20px;
+                border: 1px solid #e0e0e0;
+                margin-bottom: 15px;
+                border-radius: 8px;
+            }
+
+            .tabela-row > * {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+            }
+
+            .tabela-row > *::before {
+                font-weight: 600;
+                color: #666;
+            }
+
+            .botoes-acoes {
+                flex-direction: column;
+            }
+
+            .botoes-acoes a {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>📊 Movimentações de {{ banco.nome }}</h2>
+        </div>
+
+        <div class="saldo-info">
+            <h3>Saldo Atual</h3>
+            <div class="valor">R$ {{ "%.2f"|format(banco.saldo) }}</div>
+        </div>
+
+        <div class="botoes-acoes">
+            <a href="{{ url_for('adicionar_saldo', id=banco.id) }}" class="btn-acao btn-adicionar">➕ Adicionar Saldo</a>
+            <a href="{{ url_for('sacar_saldo', id=banco.id) }}" class="btn-acao btn-sacar">➖ Sacar Saldo</a>
+            <a href="{{ url_for('bancos') }}" class="nav-link">← Voltar</a>
+        </div>
+
+        {% if movimentacoes %}
+            <div class="tabela-movimentacoes">
+                <div class="tabela-header">
+                    <div>Descrição</div>
+                    <div>Tipo</div>
+                    <div>Valor</div>
+                    <div>Data</div>
+                </div>
+
+                {% for mov in movimentacoes %}
+                    <div class="tabela-row">
+                        <div>{{ mov.descricao }}</div>
+                        <div>
+                            {% if mov.tipo_movimento == 'entrada' %}
+                                <span class="tipo-entrada">Entrada</span>
+                            {% else %}
+                                <span class="tipo-saida">Saída</span>
+                            {% endif %}
+                        </div>
+                        <div {% if mov.tipo_movimento == 'entrada' %}class="valor-entrada"{% else %}class="valor-saida"{% endif %}>
+                            {% if mov.tipo_movimento == 'entrada' %}
+                                +R$ {{ "%.2f"|format(mov.valor) }}
+                            {% else %}
+                                -R$ {{ "%.2f"|format(mov.valor) }}
+                            {% endif %}
+                        </div>
+                        <div class="data">{{ mov.data.strftime('%d/%m/%Y') }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="sem-movimentacoes">
+                <p>😕 Nenhuma movimentação registrada.</p>
+                <p>Use os botões acima para adicionar ou sacar saldo!</p>
+            </div>
+        {% endif %}
+
+        <div class="navegacao">
+            <a href="{{ url_for('bancos') }}" class="nav-link">🏦 Meus Bancos</a>
+            <a href="{{ url_for('home') }}" class="nav-link">← Voltar para Home</a>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}

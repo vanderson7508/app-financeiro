@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redefinir Senha - Controle Financeiro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 25px;
+            padding: 60px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.12);
+        }
+
+        .form-title {
+            font-size: 2.2em;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
+            letter-spacing: -0.5px;
+        }
+
+        .form-title::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            width: 100px;
+            height: 5px;
+            background: linear-gradient(90deg, #17a2b8 0%, #20c997 100%);
+            border-radius: 3px;
+        }
+
+        .form-subtitle {
+            color: #999;
+            font-size: 1em;
+            margin-top: 18px;
+            margin-bottom: 35px;
+        }
+
+        .info-message {
+            background: #f0f8ff;
+            border-left: 5px solid #17a2b8;
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        .info-message strong {
+            color: #17a2b8;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 28px;
+            margin-top: 25px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 1.02em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.05em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: #fafafa;
+            letter-spacing: 0.2px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #17a2b8;
+            background: white;
+            box-shadow: 0 0 0 5px rgba(23, 162, 184, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .form-input::placeholder {
+            color: #bbb;
+        }
+
+        .requirements-box {
+            background: #fffbea;
+            border-left: 5px solid #f59e0b;
+            padding: 18px;
+            border-radius: 12px;
+            margin: 22px 0;
+            color: #92400e;
+            font-size: 0.95em;
+            line-height: 1.6;
+            font-weight: 600;
+        }
+
+        .requirements-box strong {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .btn-redefinir {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            font-weight: 800;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 35px;
+            box-shadow: 0 8px 20px rgba(23, 162, 184, 0.35);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-redefinir:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(23, 162, 184, 0.45);
+        }
+
+        .btn-redefinir:active {
+            transform: translateY(-1px);
+        }
+
+        .form-footer {
+            margin-top: 35px;
+            text-align: center;
+        }
+
+        .form-link {
+            color: #17a2b8;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        .form-link:hover {
+            color: #138496;
+            text-decoration: underline;
+        }
+
+        .erro {
+            background: #fee2e2;
+            border: 2.5px solid #ef4444;
+            color: #7f1d1d;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 0.98em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+        }
+
+        .erro-icon {
+            font-size: 1.3em;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 600px) {
+            .form-card {
+                padding: 40px 30px;
+                border-radius: 20px;
+            }
+
+            .form-title {
+                font-size: 1.8em;
+            }
+
+            .form-title::after {
+                width: 70px;
+                bottom: -10px;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+                margin-top: 18px;
+            }
+
+            .form-input {
+                padding: 14px 18px;
+                font-size: 1em;
+            }
+
+            .btn-redefinir {
+                padding: 16px;
+                font-size: 1.05em;
+                margin-top: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1 class="form-title">🔐 Redefinir Senha</h1>
+            <p class="form-subtitle">Crie uma nova senha segura</p>
+
+            {% if erro %}
+                <div class="erro">
+                    <span class="erro-icon">⚠️</span>
+                    <span>{{ erro }}</span>
+                </div>
+            {% endif %}
+
+            <div class="info-message">
+                <strong>🔒 Segurança:</strong>
+                Escolha uma senha forte com pelo menos 6 caracteres. Use uma combinação de letras, números e símbolos.
+            </div>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label">🔐 Nova Senha</label>
+                    <input 
+                        type="password" 
+                        name="nova_senha" 
+                        class="form-input"
+                        placeholder="Mínimo 6 caracteres"
+                        required
+                        minlength="6"
+                        autofocus
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">🔐 Confirmar Senha</label>
+                    <input 
+                        type="password" 
+                        name="confirmar_senha" 
+                        class="form-input"
+                        placeholder="Confirme sua nova senha"
+                        required
+                        minlength="6"
+                    >
+                </div>
+
+                <div class="requirements-box">
+                    <strong>📋 Requisitos da senha:</strong>
+                    ✓ Mínimo 6 caracteres<br>
+                    ✓ Use letras maiúsculas e minúsculas<br>
+                    ✓ Inclua números e símbolos se possível<br>
+                    ✓ Não use informações pessoais
+                </div>
+
+                <button type="submit" class="btn-redefinir">✅ Redefinir Senha</button>
+            </form>
+
+            <div class="form-footer">
+                <p style="color: #666; margin-bottom: 15px;">Lembrou sua senha?</p>
+                <a href="{{ url_for('login') }}" class="form-link">🔓 Voltar para Login</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

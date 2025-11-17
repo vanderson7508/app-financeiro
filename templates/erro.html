@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Erro {{ codigo }} - Controle Financeiro{% endblock %}
+
+{% block content %}
+<style>
+    .error-container {
+        text-align: center;
+        padding: 80px 20px;
+    }
+
+    .error-code {
+        font-size: 5em;
+        font-weight: 700;
+        color: #ef4444;
+        margin-bottom: 20px;
+    }
+
+    .error-title {
+        font-size: 2em;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 15px;
+    }
+
+    .error-message {
+        font-size: 1.1em;
+        color: #666;
+        margin-bottom: 40px;
+    }
+
+    .error-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+    }
+
+    .btn-voltar {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-voltar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+</style>
+
+<div class="error-container">
+    {% if codigo == 403 %}
+        <div class="error-icon">🚫</div>
+    {% elif codigo == 404 %}
+        <div class="error-icon">🔍</div>
+    {% else %}
+        <div class="error-icon">⚠️</div>
+    {% endif %}
+
+    <div class="error-code">{{ codigo }}</div>
+    <h1 class="error-title">{{ titulo }}</h1>
+    <p class="error-message">{{ mensagem }}</p>
+
+    {% if codigo == 403 %}
+        <p class="error-message" style="font-size: 0.95em; color: #999;">
+            Você tentou acessar um recurso que não pertence a você ou para o qual não tem permissão.
+        </p>
+    {% elif codigo == 404 %}
+        <p class="error-message" style="font-size: 0.95em; color: #999;">
+            Verifique se a URL está correta ou navegue usando o menu.
+        </p>
+    {% else %}
+        <p class="error-message" style="font-size: 0.95em; color: #999;">
+            Recarregue a página ou tente novamente mais tarde.
+        </p>
+    {% endif %}
+
+    <a href="{{ url_for('home') }}" class="btn-voltar">🏠 Voltar para Início</a>
+</div>
+
+{% endblock %}

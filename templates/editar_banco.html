@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% block title %}Editar Banco - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .saldo-info {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 3px solid #667eea;
+        }
+
+        .saldo-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .saldo-info .valor {
+            font-size: 1.8em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-enviar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancelar {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 600px) {
+            .form-container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>✏️ Editar Banco</h2>
+
+        <div class="saldo-info">
+            <h3>Saldo Atual</h3>
+            <div class="valor">R$ {{ "%.2f"|format(banco.saldo) }}</div>
+        </div>
+
+        <form method="POST" action="{{ url_for('editar_banco', id=banco.id) }}">
+            <div class="form-group">
+                <label for="nome">Nome do Banco *</label>
+                <input 
+                    type="text" 
+                    id="nome" 
+                    name="nome" 
+                    value="{{ banco.nome }}"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="tipo">Tipo de Conta *</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="Conta Corrente" {% if banco.tipo == 'Conta Corrente' %}selected{% endif %}>Conta Corrente</option>
+                    <option value="Poupança" {% if banco.tipo == 'Poupança' %}selected{% endif %}>Poupança</option>
+                    <option value="Investimento" {% if banco.tipo == 'Investimento' %}selected{% endif %}>Investimento</option>
+                    <option value="Outro" {% if banco.tipo == 'Outro' %}selected{% endif %}>Outro</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="descricao">Descrição (opcional)</label>
+                <textarea 
+                    id="descricao" 
+                    name="descricao"
+                >{{ banco.descricao or '' }}</textarea>
+            </div>
+
+            <div class="botoes">
+                <button type="submit" class="btn-enviar">✅ Salvar Alterações</button>
+                <a href="{{ url_for('bancos') }}" class="btn btn-cancelar">❌ Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+{% endblock %}

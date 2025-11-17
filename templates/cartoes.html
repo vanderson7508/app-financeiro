@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Meus Cartões - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .cartoes-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .cartoes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .cartoes-header h2 {
+            color: #333;
+            font-size: 2em;
+        }
+
+        .btn-criar-cartao {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-criar-cartao:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .cartoes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card-cartao {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s ease;
+        }
+
+        .card-cartao:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-cartao-nome {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .card-cartao-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-linha {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .info-label {
+            opacity: 0.9;
+        }
+
+        .info-valor {
+            font-weight: 600;
+        }
+
+        .card-cartao-acoes {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-acao {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+        }
+
+        .btn-editar {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-editar:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-deletar {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+        }
+
+        .btn-deletar:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .sem-cartoes {
+            text-align: center;
+            padding: 60px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #999;
+        }
+
+        .sem-cartoes p {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .navegacao {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: 12px 25px;
+            background: #e0e0e0;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .cartoes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cartoes-container">
+        <div class="cartoes-header">
+            <h2>💳 Meus Cartões de Crédito</h2>
+            <a href="{{ url_for('criar_cartao') }}" class="btn-criar-cartao">➕ Novo Cartão</a>
+        </div>
+
+        {% if cartoes %}
+            <div class="cartoes-grid">
+                {% for cartao in cartoes %}
+                    <div class="card-cartao">
+                        <div class="card-cartao-nome">{{ cartao.nome }}</div>
+                        
+                        <div class="card-cartao-info">
+                            <div class="info-linha">
+                                <span class="info-label">📅 Fechamento:</span>
+                                <span class="info-valor">{{ cartao.dia_fechamento }}º dia</span>
+                            </div>
+                            <div class="info-linha">
+                                <span class="info-label">💰 Vencimento:</span>
+                                <span class="info-valor">{{ cartao.dia_vencimento }}º dia</span>
+                            </div>
+                        </div>
+
+                        <div class="card-cartao-acoes">
+                            <a href="{{ url_for('editar_cartao', id=cartao.id) }}" class="btn-acao btn-editar">✏️ Editar</a>
+                            <form method="POST" action="{{ url_for('deletar_cartao', id=cartao.id) }}" style="flex: 1;">
+                                <button type="submit" class="btn-acao btn-deletar" onclick="return confirm('Tem certeza?');">🗑️ Deletar</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="sem-cartoes">
+                <p>😕 Você ainda não tem cartões cadastrados.</p>
+                <p>Clique em "Novo Cartão" para começar!</p>
+            </div>
+        {% endif %}
+
+        <div class="navegacao">
+            <a href="{{ url_for('home') }}" class="nav-link">← Voltar para Home</a>
+            <a href="{{ url_for('compras_cartao') }}" class="nav-link">🛍️ Ver Compras no Cartão</a>
+            <a href="{{ url_for('dividas_parceladas') }}" class="nav-link">📊 Dívidas Parceladas</a>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}
