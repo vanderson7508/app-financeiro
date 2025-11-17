@@ -18,7 +18,19 @@ from flask import flash
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get(
     'SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///financeiro.db'
+
+# Configurar banco de dados
+if os.environ.get('DATABASE_URL'):
+    # Produção - PostgreSQL no Railway
+    database_url = os.environ.get('DATABASE_URL')
+    # Fix para PostgreSQL
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Desenvolvimento - SQLite local
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///financeiro.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ⭐ ADICIONE ISTO DEPOIS:
