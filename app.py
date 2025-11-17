@@ -6,7 +6,6 @@ from calendar import monthrange
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import os
 from itsdangerous import URLSafeTimedSerializer
-from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 import secrets
 # ⭐(SendGrid):
