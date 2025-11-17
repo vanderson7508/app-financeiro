@@ -1,3 +1,7 @@
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h1>📋 Relatórios</h1>
+    <button onclick="history.back()" style="background: #6c757d; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 50px; font-weight: 600; cursor: pointer;">← Voltar</button>
+</div>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -414,20 +418,20 @@
                     <div class="filtros-grid">
                         <div class="form-group">
                             <label for="data_inicio">Data Início:</label>
-                            <input 
-                                type="date" 
-                                id="data_inicio" 
-                                name="data_inicio" 
+                            <input
+                                type="date"
+                                id="data_inicio"
+                                name="data_inicio"
                                 value="{{ data_inicio or '' }}"
                             >
                         </div>
 
                         <div class="form-group">
                             <label for="data_fim">Data Fim:</label>
-                            <input 
-                                type="date" 
-                                id="data_fim" 
-                                name="data_fim" 
+                            <input
+                                type="date"
+                                id="data_fim"
+                                name="data_fim"
                                 value="{{ data_fim or '' }}"
                             >
                         </div>
@@ -437,7 +441,7 @@
                             <select id="categoria" name="categoria">
                                 <option value="">Todas</option>
                                 {% for categoria in categorias %}
-                                    <option 
+                                    <option
                                         value="{{ categoria }}"
                                         {% if categoria_selecionada == categoria %}selected{% endif %}
                                     >
@@ -451,13 +455,13 @@
                             <label for="tipo">Tipo:</label>
                             <select id="tipo" name="tipo">
                                 <option value="">Todos</option>
-                                <option 
+                                <option
                                     value="Receita"
                                     {% if tipo_selecionado == 'Receita' %}selected{% endif %}
                                 >
                                     Receita
                                 </option>
-                                <option 
+                                <option
                                     value="Despesa"
                                     {% if tipo_selecionado == 'Despesa' %}selected{% endif %}
                                 >
@@ -501,7 +505,7 @@
             {% if transacoes %}
                 <div class="graficos-section">
                     <h2>📈 Visualizações</h2>
-                    
+
                     <div class="graficos-grid">
                         <!-- GRÁFICO DE PIZZA -->
                         <div class="grafico-container">

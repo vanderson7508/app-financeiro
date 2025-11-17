@@ -6,7 +6,8 @@
     <meta name="description" content="Controle Financeiro - Aplicativo de gestão de finanças pessoais">
     <meta name="theme-color" content="#17a2b8">
     <title>{% block title %}Controle Financeiro{% endblock %}</title>
-    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
     <style>
         * {
             margin: 0;
@@ -390,8 +391,7 @@
     <nav class="navbar">
         <div class="navbar-content">
             <div class="navbar-brand">💰 Controle Financeiro</div>
-            <button class="menu-toggle" id="menuToggle">☰</button>
-            <div class="navbar-menu" id="navbarMenu">
+            <div class="navbar-menu" id="navbarMenu" style="display: flex !important; position: relative !important; top: auto !important; background: transparent !important; box-shadow: none !important;"></div>
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('home') }}">🏠 Home</a>
                     <a href="{{ url_for('lista_transacoes') }}">📊 Transações</a>
@@ -399,7 +399,7 @@
                     <a href="{{ url_for('cartoes') }}">💳 Cartões</a>
                     <a href="{{ url_for('orcamentos') }}">📈 Orçamentos</a>
                     <a href="{{ url_for('relatorios') }}">📋 Relatórios</a>
-                    <a href="{{ url_for('logout') }}" style="color: var(--danger);">🚪 Sair</a>
+                    <a href="{{ url_for('logout') }}">🚪 Sair</a>
                 {% else %}
                     <a href="{{ url_for('login') }}">🔐 Login</a>
                     <a href="{{ url_for('registrar') }}">📝 Registrar</a>
@@ -417,8 +417,8 @@
     <footer>
         <p>💰 Controle Financeiro © 2025 | Desenvolvido com ❤️</p>
         <p style="font-size: 0.85em; margin-top: 0.5rem;">
-            <a href="#">Privacidade</a> • 
-            <a href="#">Termos</a> • 
+            <a href="#">Privacidade</a> •
+            <a href="#">Termos</a> •
             <a href="#">Suporte</a>
         </p>
     </footer>
@@ -442,7 +442,7 @@
             const navbar = document.querySelector('.navbar');
             const menu = document.getElementById('navbarMenu');
             const toggle = document.getElementById('menuToggle');
-            
+
             if (!navbar.contains(event.target) && menu.classList.contains('active')) {
                 menu.classList.remove('active');
             }
