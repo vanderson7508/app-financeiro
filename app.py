@@ -1256,6 +1256,92 @@ def transferencia():
 
     return render_template('transferencia.html', bancos=bancos_lista)
 
+@app.route('/carteira/transferir', methods=['GET', 'POST'])
+@login_required
+def transferir_carteira():
+    """Transferir saldo da carteira para um banco"""
+
+    # Pegar saldo da carteira
+    transacoes_carteira = Transacao.query.filter_by(
+        usuario_id=current_user.id, banco_id=None).all()
+
+    receitas_carteira = sum(
+        t.valor for t in transacoes_carteira if t.tipo == 'Receita')
+    despesas_carteira = sum(
+        t.valor for t in transacoes_carteira if t.tipo == 'Despesa')
+    saldo_carteira = receitas_carteira - despesas_carteira
+
+    bancos = Banco.query.filter_by(usuario_id=current_user.id).all()
+
+    # Verificar se tem bancos
+    if not bancos:
+        flash('⚠️ Você precisa cadastrar um banco primeiro!', 'warning')
+        return redirect(url_for('criar_banco'))
+
+    if request.method == 'POST':
+        banco_id = request.form.get('banco_id', type=int)
+        valor_str = request.form.get('valor', '0').strip()
+        valor_str = valor_str.replace('.', '').replace(',', '.')
+        valor = float(valor_str)
+        descricao = request.form.get('descricao', 'Transferência da carteira')
+        data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
+
+        # SEGURANÇA: Verificar propriedade do banco
+        banco = verificar_propriedade_banco(banco_id)
+
+        # Validar saldo
+        if valor > saldo_carteira:
+            flash('❌ Saldo insuficiente na carteira!', 'danger')
+            return redirect(url_for('transferir_carteira'))
+
+        # Criar transação de saída na carteira
+        transacao_saida = Transacao(
+            usuario_id=current_user.id,
+            descricao=f'Transferência para {banco.nome}',
+            valor=valor,
+            categoria='Transferência',
+            tipo='Despesa',
+            forma_pagamento='Transferência',
+            data=data,
+            banco_id=None  # Sai da carteira
+        )
+        db.session.add(transacao_saida)
+
+        # Criar transação de entrada no banco
+        transacao_entrada = Transacao(
+            usuario_id=current_user.id,
+            descricao=f'Transferência da carteira',
+            valor=valor,
+            categoria='Transferência',
+            tipo='Receita',
+            forma_pagamento='Transferência',
+            data=data,
+            banco_id=banco_id  # Entra no banco
+        )
+        db.session.add(transacao_entrada)
+
+        # Atualizar saldo do banco
+        banco.saldo += valor
+
+        # Criar movimento do banco
+        movimento = MovimentacaoBanco(
+            banco_id=banco_id,
+            tipo_movimento='entrada',
+            valor=valor,
+            descricao=descricao,
+            data=data
+        )
+        db.session.add(movimento)
+
+        db.session.commit()
+
+        flash(f'✅ Transferência de R$ {valor:.2f} realizada com sucesso!', 'success')
+        return redirect(url_for('home'))
+
+    return render_template('transferir_carteira.html',
+                          saldo_carteira=saldo_carteira,
+                          bancos=bancos)
+
 # ===== ROTAS DE CARTÃO DE CRÉDITO =====
 
 

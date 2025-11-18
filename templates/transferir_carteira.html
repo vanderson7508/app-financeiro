@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Transferir da Carteira - Financeiro{% endblock %}
+{% block content %}
+
+<div style="max-width: 700px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
+    <h2 style="color: #333; margin-bottom: 30px; text-align: center;">💼 Transferir da Carteira para Banco</h2>
+
+    <div style="background: #f0f4ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 6px; margin-bottom: 25px; color: #333;">
+        <p style="margin: 0; font-weight: 600;">Saldo atual da carteira:</p>
+        <p style="margin: 10px 0 0 0; font-size: 1.5em; color: #667eea;">
+            R$ {{ "%.2f"|format(saldo_carteira) }}
+        </p>
+    </div>
+
+    {% if saldo_carteira <= 0 %}
+        <div style="background: #fee2e2; border: 2px solid #ef4444; color: #7f1d1d; padding: 15px; border-radius: 6px; margin-bottom: 25px; text-align: center;">
+            ⚠️ Você não tem saldo na carteira para transferir!
+        </div>
+    {% else %}
+        <form method="POST">
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 10px;">Banco de Destino *</label>
+                <select name="banco_id" required style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1em;">
+                    <option value="">-- Selecione um banco --</option>
+                    {% for banco in bancos %}
+                        <option value="{{ banco.id }}">{{ banco.nome }} (Saldo: R$ {{ "%.2f"|format(banco.saldo) }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 10px;">Valor a Transferir (R$) *</label>
+                <input type="number" name="valor" placeholder="0.00" step="0.01" min="0.01" max="{{ saldo_carteira }}" required
+                    style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1em;">
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 10px;">Descrição</label>
+                <input type="text" name="descricao" placeholder="Ex: Depósito na conta"
+                    style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1em;">
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 10px;">Data da Transferência *</label>
+                <input type="date" name="data" required
+                    style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1em;">
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <button type="submit" style="flex: 1; padding: 12px 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">✅ Transferir</button>
+                <a href="{{ url_for('home') }}" style="flex: 1; padding: 12px 25px; background: #e0e0e0; color: #333; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center;">❌ Cancelar</a>
+            </div>
+        </form>
+    {% endif %}
+</div>
+
+<script>
+    document.querySelector('input[name="data"]').valueAsDate = new Date();
+</script>
+
+{% endblock %}
