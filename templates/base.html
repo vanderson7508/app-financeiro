@@ -16,8 +16,7 @@
         .navbar { background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white; padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
         .navbar-content { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
         .navbar-brand { font-size: 1.2em; font-weight: 700; letter-spacing: -0.5px; }
-        .navbar-menu { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: calc(100vh - 60px); overflow-y: auto; }
-        .navbar-menu.active { display: flex; }
+        .navbar-menu { display: flex !important; position: relative !important; top: auto !important; background: transparent !important; box-shadow: none !important; flex-direction: row !important; max-height: none !important; }
         .navbar-menu a { padding: 1rem; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); transition: background 0.3s ease; }
         .navbar-menu a:hover { background: var(--light); color: var(--primary-color); }
         .menu-toggle { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 0.5rem; }
@@ -104,6 +103,7 @@
                     <a href="{{ url_for('bancos') }}">🏦 Bancos</a>
                     <a href="{{ url_for('cartoes') }}">💳 Cartões</a>
                     <a href="{{ url_for('transferir_carteira') }}">💼 Carteira</a>
+                    <a href="{{ url_for('categorias') }}">🏷️ Categorias</a>
                     <a href="{{ url_for('orcamentos') }}">📈 Orçamentos</a>
                     <a href="{{ url_for('relatorios') }}">📋 Relatórios</a>
                     <a href="{{ url_for('logout') }}">🚪 Sair</a>
