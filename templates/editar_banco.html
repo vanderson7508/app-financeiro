@@ -156,10 +156,10 @@
         <form method="POST" action="{{ url_for('editar_banco', id=banco.id) }}">
             <div class="form-group">
                 <label for="nome">Nome do Banco *</label>
-                <input 
-                    type="text" 
-                    id="nome" 
-                    name="nome" 
+                <input
+                    type="text"
+                    id="nome"
+                    name="nome"
                     value="{{ banco.nome }}"
                     required
                 >
@@ -177,12 +177,38 @@
 
             <div class="form-group">
                 <label for="descricao">Descrição (opcional)</label>
-                <textarea 
-                    id="descricao" 
+                <textarea
+                    id="descricao"
                     name="descricao"
                 >{{ banco.descricao or '' }}</textarea>
             </div>
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #e0e0e0;">
 
+            <h3 style="color: #333; margin-bottom: 20px; font-size: 1.2em;">💰 Editar Saldo (Opcional)</h3>
+
+            <div style="background: #f0f4ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 6px; margin-bottom: 25px; color: #333; font-size: 0.95em;">
+                <p style="margin: 0;">
+                    <strong>Saldo atual:</strong> R$ {{ "%.2f"|format(banco.saldo) }}
+                </p>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 10px;">Novo Saldo (R$)</label>
+                <input type="number" name="saldo" placeholder="Deixe em branco para não alterar" step="0.01"
+                    style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1em;">
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 10px;">Descrição do Ajuste</label>
+                <input type="text" name="descricao_ajuste" placeholder="Ex: Depósito, Saque, Ajuste de saldo"
+                    style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1em;">
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="display: block; font-weight: 600; color: #333; margin-bottom: 10px;">Data do Ajuste</label>
+                <input type="date" name="data_ajuste"
+                    style="width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1em;">
+            </div>
             <div class="botoes">
                 <button type="submit" class="btn-enviar">✅ Salvar Alterações</button>
                 <a href="{{ url_for('bancos') }}" class="btn btn-cancelar">❌ Cancelar</a>
