@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes da Fatura{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>📄 Detalhes da Fatura</h2>
+            <hr>
+        </div>
+    </div>
+
+    <!-- Informações da Fatura -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>💳 {{ fatura.cartao.nome }} - {{ fatura.mes }}/{{ fatura.ano }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Data Fechamento:</strong>
+                            <p>{{ fatura.data_fechamento.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Data Vencimento:</strong>
+                            <p>{{ fatura.data_vencimento.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Valor Total:</strong>
+                            <p class="text-primary"><h4>R$ {{ "%.2f"|format(fatura.valor_total) }}</h4></p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Valor Pago:</strong>
+                            <p class="text-success"><h4>R$ {{ "%.2f"|format(fatura.valor_pago) }}</h4></p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Valor Restante:</strong>
+                            <p class="text-danger"><h4>R$ {{ "%.2f"|format(fatura.valor_restante) }}</h4></p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Status:</strong>
+                            <p>
+                                {% if fatura.status == 'paga' %}
+                                    <span class="badge bg-success" style="font-size: 1rem;">✅ Paga</span>
+                                {% elif fatura.status == 'atrasada' %}
+                                    <span class="badge bg-danger" style="font-size: 1rem;">⚠️ Atrasada</span>
+                                {% else %}
+                                    <span class="badge bg-warning" style="font-size: 1rem;">📋 Aberta</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumo Rápido -->
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-header bg-secondary text-white">
+                    <h5>📊 Resumo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Total de Transações:</small>
+                        <h6>{{ transacoes|length }} compras</h6>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Pagamentos Registrados:</small>
+                        <h6>{{ pagamentos|length }}</h6>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Percentual Pago:</small>
+                        <div class="progress">
+                            {% if fatura.valor_total > 0 %}
+                                {% set percentual = (fatura.valor_pago / fatura.valor_total * 100)|int %}
+                            {% else %}
+                                {% set percentual = 0 %}
+                            {% endif %}
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ percentual }}%;" 
+                                 aria-valuenow="{{ percentual }}" aria-valuemin="0" aria-valuemax="100">
+                                {{ percentual }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transações da Fatura -->
+    {% if transacoes %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5>🛒 Transações da Fatura ({{ transacoes|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Descrição</th>
+                                    <th>Valor</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transacao in transacoes %}
+                                <tr>
+                                    <td>{{ transacao.compra.descricao }}</td>
+                                    <td>R$ {{ "%.2f"|format(transacao.valor_parcela) }}</td>
+                                    <td>{{ transacao.compra.data_compra.strftime('%d/%m/%Y') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pagamentos Registrados -->
+    {% if pagamentos %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5>✅ Pagamentos Registrados ({{ pagamentos|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                    <th>Forma de Pagamento</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pagamento in pagamentos %}
+                                <tr>
+                                    <td>{{ pagamento.data_pagamento.strftime('%d/%m/%Y') }}</td>
+                                    <td><strong>R$ {{ "%.2f"|format(pagamento.valor) }}</strong></td>
+                                    <td>{{ pagamento.forma_pagamento }}</td>
+                                    <td>{{ pagamento.descricao or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Formulário de Pagamento -->
+    {% if fatura.status != 'paga' and fatura.valor_restante > 0 %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5>💳 Pagar Fatura</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('pagar_fatura_route', fatura_id=fatura.id) }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="banco_id" class="form-label">Selecione o Banco:</label>
+                                <select class="form-select" id="banco_id" name="banco_id" required>
+                                    <option value="">-- Selecione um banco --</option>
+                                    {% for banco in bancos %}
+                                    <option value="{{ banco.id }}">
+                                        {{ banco.nome }} (Saldo: R$ {{ "%.2f"|format(banco.saldo) }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="valor" class="form-label">Valor a Pagar:</label>
+                                <input type="number" class="form-control" id="valor" name="valor" 
+                                       placeholder="Digite o valor" step="0.01" min="0.01" 
+                                       max="{{ fatura.valor_restante }}" required>
+                                <small class="text-muted">Máximo: R$ {{ "%.2f"|format(fatura.valor_restante) }}</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-success btn-lg w-100">
+                                    ✅ Confirmar Pagamento
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Botões de Ação -->
+    <div class="row">
+        <div class="col-md-12">
+            <a href="{{ url_for('listar_faturas') }}" class="btn btn-secondary">
+                ← Voltar para Faturas
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: none;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    h4 {
+        margin: 0;
+        padding: 0;
+    }
+</style>
+{% endblock %}

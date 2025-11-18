@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, abort
-from models import db, Transacao, Usuario, Banco, MovimentacaoBanco, CartaoCredito, CompraCartao, Categoria, Recorrencia, Orcamento
-from datetime import datetime, date
+from models import db, Transacao, Usuario, Banco, MovimentacaoBanco, CartaoCredito, CompraCartao, Categoria, Recorrencia, Orcamento, FaturaCartao, TransacaoFatura, PagamentoFatura
+from datetime import datetime, date, timedelta
+from dateutil.relativedelta import relativedelta
 from sqlalchemy import extract, func
 from calendar import monthrange
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -18,15 +19,13 @@ from flask import flash
 app = Flask(__name__)
 
 # ===== FUNÇÃO PARA CONVERTER VALORES COM VÍRGULA OU PONTO =====
-
-
 def parse_valor(valor_str):
     """Converte string com vírgula ou ponto para float"""
     if not valor_str or not str(valor_str).strip():
         return 0.0
-
+    
     valor_str = str(valor_str).strip()
-
+    
     # Se tem vírgula, substitui por ponto
     # Se tem ponto antes de vírgula, remove o ponto
     if ',' in valor_str:
@@ -35,7 +34,7 @@ def parse_valor(valor_str):
     else:
         # Formato: 250.99 ou 250
         valor_str = valor_str.replace(',', '')
-
+    
     try:
         return float(valor_str)
     except ValueError:
@@ -43,9 +42,157 @@ def parse_valor(valor_str):
 
 # ===== FIM DA FUNÇÃO =====
 
+# ===== FUNÇÃO PARA GERENCIAR FATURAS =====
+
+def criar_ou_atualizar_fatura(usuario_id, cartao_id, data_compra, valor):
+    """
+    Cria ou atualiza a fatura do cartão.
+    
+    LÓGICA CORRIGIDA (FINAL):
+    - Compra ANTES do dia de fechamento (dia 24) → Entra na fatura de ESTE MÊS
+    - Compra DEPOIS do dia de fechamento (dia 24) → Entra na fatura do PRÓXIMO MÊS
+    
+    Exemplo com fechamento dia 24:
+    - Compra em 18/11 (ANTES) → Fatura de NOVEMBRO (fecha 24/11, vence 05/12)
+    - Compra em 25/11 (DEPOIS) → Fatura de DEZEMBRO (fecha 24/12, vence 05/01)
+    """
+    cartao = CartaoCredito.query.get(cartao_id)
+    
+    if not cartao:
+        print(f"❌ Cartão com ID {cartao_id} não encontrado!")
+        return None
+    
+    # ✅ LÓGICA CORRIGIDA FINAL:
+    # Se compra é ANTES ou NO dia de fechamento = fatura DESTE MÊS
+    # Se compra é DEPOIS do dia de fechamento = fatura do PRÓXIMO MÊS
+    if data_compra.day <= cartao.dia_fechamento:
+        # Compra ANTES ou NO fechamento = fatura DESTE MÊS
+        mes = data_compra.month
+        ano = data_compra.year
+    else:
+        # Compra DEPOIS do fechamento = fatura do PRÓXIMO MÊS
+        proximo_mes = data_compra + relativedelta(months=1)
+        mes = proximo_mes.month
+        ano = proximo_mes.year
+    
+    # Calcular datas da fatura
+    _, ultimo_dia = monthrange(ano, mes)
+    dia_fechamento = min(cartao.dia_fechamento, ultimo_dia)
+    
+    data_fechamento = date(ano, mes, dia_fechamento)
+    
+    # ✅ Data de vencimento = MÊS SEGUINTE após o fechamento
+    # Exemplo: Se fecha em 24/11, vence em 05/12
+    mes_vencimento = mes + 1 if mes < 12 else 1
+    ano_vencimento = ano if mes < 12 else ano + 1
+    _, ultimo_dia_venc = monthrange(ano_vencimento, mes_vencimento)
+    dia_vencimento_calc = min(cartao.dia_vencimento, ultimo_dia_venc)
+    data_vencimento = date(ano_vencimento, mes_vencimento, dia_vencimento_calc)
+    
+    print(f"DEBUG: Fatura {mes}/{ano}")
+    print(f"       Fecha: {data_fechamento}")
+    print(f"       Vence em: {mes_vencimento}/{ano_vencimento}, dia {dia_vencimento_calc}")
+    print(f"       Data Vencimento: {data_vencimento}")
+    
+    # Procurar ou criar fatura
+    fatura = FaturaCartao.query.filter_by(
+        usuario_id=usuario_id,
+        cartao_id=cartao_id,
+        mes=mes,
+        ano=ano
+    ).first()
+    
+    if not fatura:
+        # ✅ Criar nova fatura
+        fatura = FaturaCartao(
+            usuario_id=usuario_id,
+            cartao_id=cartao_id,
+            mes=mes,
+            ano=ano,
+            data_fechamento=data_fechamento,
+            data_vencimento=data_vencimento,
+            valor_total=valor,
+            valor_pago=0,
+            valor_restante=valor,
+            status='aberta'
+        )
+        db.session.add(fatura)
+        db.session.flush()
+        print(f"✅ Fatura criada: {mes:02d}/{ano}")
+        print(f"   Fecha: {data_fechamento.strftime('%d/%m/%Y')}")
+        print(f"   Vence: {data_vencimento.strftime('%d/%m/%Y')}")
+        print(f"   Valor: R$ {valor}")
+    else:
+        # Atualizar valores da fatura existente
+        fatura.valor_total += valor
+        fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+        print(f"✅ Fatura atualizada: {mes:02d}/{ano}")
+        print(f"   Total: R$ {fatura.valor_total}")
+    
+    # Verificar se está atrasada
+    if fatura.data_vencimento < date.today() and fatura.status == 'aberta':
+        fatura.status = 'atrasada'
+        print(f"⚠️  Fatura {mes:02d}/{ano} marcada como ATRASADA")
+    
+    try:
+        db.session.commit()
+        print(f"✅ Fatura {mes:02d}/{ano} salva com sucesso!")
+        return fatura
+    except Exception as e:
+        print(f"❌ Erro ao salvar fatura: {e}")
+        db.session.rollback()
+        return None
+
+def pagar_fatura(fatura_id, valor_pagamento, banco_id):
+    """
+    Registra o pagamento de uma fatura.
+    """
+    fatura = FaturaCartao.query.get(fatura_id)
+    banco = Banco.query.get(banco_id)
+    
+    if not fatura or not banco:
+        return False, "Fatura ou banco não encontrado"
+    
+    if banco.saldo < valor_pagamento:
+        return False, "Saldo insuficiente no banco"
+    
+    # Descontar do banco
+    banco.saldo -= valor_pagamento
+    
+    # Registrar movimentação
+    movimento = MovimentacaoBanco(
+        banco_id=banco_id,
+        tipo_movimento='saida',
+        valor=valor_pagamento,
+        descricao=f'Pagamento fatura {fatura.cartao.nome} {fatura.mes}/{fatura.ano}',
+        data=date.today()
+    )
+    db.session.add(movimento)
+    
+    # Registrar pagamento
+    pagamento = PagamentoFatura(
+        fatura_id=fatura_id,
+        valor=valor_pagamento,
+        data_pagamento=date.today(),
+        forma_pagamento='Transferência Bancária'
+    )
+    db.session.add(pagamento)
+    
+    # Atualizar fatura
+    fatura.valor_pago += valor_pagamento
+    fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+    
+    if fatura.valor_restante <= 0:
+        fatura.status = 'paga'
+        fatura.data_pagamento = date.today()
+    
+    db.session.commit()
+    
+    return True, "Pagamento registrado com sucesso"
+
+# ===== FIM DAS FUNÇÕES DE FATURA =====
+
 # Filtro para formatar valores monetários
-
-
 @app.template_filter('format_decimal')
 def format_decimal(value):
     if value is None:
@@ -56,13 +203,9 @@ def format_decimal(value):
         return '0.00'
 
 # Filtro para converter para valor correto
-
-
 @app.context_processor
 def inject_utils():
     return dict(parse_value=parse_valor)
-
-
 app.config['SECRET_KEY'] = os.environ.get(
     'SECRET_KEY', 'dev-secret-key-change-in-production')
 
@@ -551,6 +694,20 @@ def adicionar():
                 forma_pagamento=forma_pagamento
             )
             db.session.add(nova_compra)
+            db.session.flush()  # ✅ Garantir que a compra seja salva
+            
+            # ✅ CRIAR/ATUALIZAR A FATURA
+            fatura = criar_ou_atualizar_fatura(
+                usuario_id=current_user.id,
+                cartao_id=cartao_id,
+                data_compra=data,
+                valor=valor
+            )
+            
+            if fatura:
+                print(f"✅ Fatura criada para compra: {fatura.mes:02d}/{fatura.ano}")
+            else:
+                print(f"❌ Erro ao criar fatura para a compra!")
 
         db.session.commit()
         return redirect(url_for('lista_transacoes'))
@@ -585,6 +742,68 @@ def editar(id):
 def deletar(id):
     # SEGURANÇA: Verificar propriedade
     transacao = verificar_propriedade_transacao(id)
+    
+    # ✅ SE FOR CARTÃO DE CRÉDITO, ATUALIZAR FATURA
+    if transacao.forma_pagamento == 'Cartão de Crédito':
+        print(f"🗑️ Deletando transação cartão: {transacao.descricao}")
+        
+        # Procurar a CompraCartao relacionada
+        compra = CompraCartao.query.filter_by(
+            usuario_id=transacao.usuario_id,
+            descricao=transacao.descricao,
+            valor_total=transacao.valor,
+            data_compra=transacao.data
+        ).first()
+        
+        if compra:
+            print(f"✅ Compra encontrada, atualizando fatura...")
+            valor_compra = compra.valor_total
+            cartao_id = compra.cartao_id
+            
+            # ✅ ATUALIZAR A FATURA
+            cartao = CartaoCredito.query.get(cartao_id)
+            
+            if cartao:
+                if compra.data_compra.day <= cartao.dia_fechamento:
+                    mes_fatura = compra.data_compra.month
+                    ano_fatura = compra.data_compra.year
+                else:
+                    if compra.data_compra.month == 12:
+                        mes_fatura = 1
+                        ano_fatura = compra.data_compra.year + 1
+                    else:
+                        mes_fatura = compra.data_compra.month + 1
+                        ano_fatura = compra.data_compra.year
+                
+                # Procurar a fatura
+                fatura = FaturaCartao.query.filter_by(
+                    usuario_id=transacao.usuario_id,
+                    cartao_id=cartao_id,
+                    mes=mes_fatura,
+                    ano=ano_fatura
+                ).first()
+                
+                if fatura:
+                    print(f"✅ Fatura encontrada: {mes_fatura:02d}/{ano_fatura}")
+                    print(f"   Valor anterior: R$ {fatura.valor_total}")
+                    
+                    # SUBTRAIR O VALOR DA FATURA
+                    fatura.valor_total -= valor_compra
+                    fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+                    
+                    print(f"   Valor novo: R$ {fatura.valor_total}")
+                    
+                    # SE FATURA FICAR COM VALOR 0, DELETAR
+                    if fatura.valor_total <= 0:
+                        print(f"   Fatura com valor 0, deletando...")
+                        db.session.delete(fatura)
+                    
+                    print(f"✅ Fatura atualizada!")
+            
+            # DELETAR A COMPRA
+            db.session.delete(compra)
+    
+    # DELETAR A TRANSAÇÃO
     db.session.delete(transacao)
     db.session.commit()
     return redirect(url_for('lista_transacoes'))
@@ -1515,34 +1734,64 @@ def criar_compra_cartao():
         return redirect(url_for('criar_cartao'))
 
     if request.method == 'POST':
-        cartao_id = request.form.get('cartao_id', type=int)
+        try:
+            cartao_id = request.form.get('cartao_id', type=int)
 
-        # SEGURANÇA: Verificar propriedade
-        cartao = verificar_propriedade_cartao(cartao_id)
+            # SEGURANÇA: Verificar propriedade
+            cartao = verificar_propriedade_cartao(cartao_id)
 
-        descricao = request.form.get('descricao')
-        valor_total = parse_valor(request.form.get('valor', '0'))
-        quantidade_parcelas = request.form.get(
-            'quantidade_parcelas', type=int, default=1)
-        categoria = request.form.get('categoria')
-        data_compra = datetime.strptime(
-            request.form.get('data_compra'), '%Y-%m-%d').date()
+            descricao = request.form.get('descricao')
+            valor_total = parse_valor(request.form.get('valor', '0'))
+            quantidade_parcelas = request.form.get(
+                'quantidade_parcelas', type=int, default=1)
+            categoria = request.form.get('categoria')
+            data_compra = datetime.strptime(
+                request.form.get('data_compra'), '%Y-%m-%d').date()
 
-        nova_compra = CompraCartao(
-            usuario_id=current_user.id,
-            cartao_id=cartao_id,
-            descricao=descricao,
-            valor_total=valor_total,
-            quantidade_parcelas=quantidade_parcelas,
-            data_compra=data_compra,
-            categoria=categoria,
-            forma_pagamento='Cartão de Crédito'
-        )
+            # ✅ CRIAR A COMPRA
+            nova_compra = CompraCartao(
+                usuario_id=current_user.id,
+                cartao_id=cartao_id,
+                descricao=descricao,
+                valor_total=valor_total,
+                quantidade_parcelas=quantidade_parcelas,
+                data_compra=data_compra,
+                categoria=categoria,
+                forma_pagamento='Cartão de Crédito'
+            )
 
-        db.session.add(nova_compra)
-        db.session.commit()
-
-        return redirect(url_for('compras_cartao'))
+            db.session.add(nova_compra)
+            db.session.flush()  # ✅ Garantir que a compra seja salva antes da fatura
+            
+            print(f"✅ Compra criada: {descricao} - R$ {valor_total}")
+            
+            # ✅ CRIAR/ATUALIZAR A FATURA
+            fatura = criar_ou_atualizar_fatura(
+                usuario_id=current_user.id,
+                cartao_id=cartao_id,
+                data_compra=data_compra,
+                valor=valor_total
+            )
+            
+            if fatura:
+                print(f"✅ Fatura criada/atualizada: {fatura.mes}/{fatura.ano} - R$ {fatura.valor_total}")
+                db.session.commit()
+                flash(f'✅ Compra lançada com sucesso! Fatura criada para {fatura.mes}/{fatura.ano}', 'success')
+            else:
+                print(f"❌ Erro ao criar fatura!")
+                db.session.rollback()
+                flash('❌ Erro ao criar fatura!', 'danger')
+                return render_template('criar_compra_cartao.html', cartoes=cartoes, categorias=categorias)
+            
+            return redirect(url_for('compras_cartao'))
+            
+        except Exception as e:
+            print(f"❌ ERRO ao lançar compra: {e}")
+            import traceback
+            traceback.print_exc()
+            db.session.rollback()
+            flash(f'❌ Erro ao lançar compra: {str(e)}', 'danger')
+            return render_template('criar_compra_cartao.html', cartoes=cartoes, categorias=categorias)
 
     return render_template('criar_compra_cartao.html', cartoes=cartoes, categorias=categorias)
 
@@ -1577,6 +1826,56 @@ def editar_compra_cartao(id):
 def deletar_compra_cartao(id):
     # SEGURANÇA: Verificar propriedade
     compra = verificar_propriedade_compra(id)
+    
+    print(f"🗑️ Deletando compra cartão: {compra.descricao}")
+    
+    valor_compra = compra.valor_total
+    cartao_id = compra.cartao_id
+    data_compra = compra.data_compra
+    usuario_id = compra.usuario_id
+    
+    # ✅ ATUALIZAR A FATURA ANTES DE DELETAR
+    cartao = CartaoCredito.query.get(cartao_id)
+    
+    if cartao:
+        # Determinar qual mês a compra pertencia
+        if data_compra.day <= cartao.dia_fechamento:
+            mes_fatura = data_compra.month
+            ano_fatura = data_compra.year
+        else:
+            if data_compra.month == 12:
+                mes_fatura = 1
+                ano_fatura = data_compra.year + 1
+            else:
+                mes_fatura = data_compra.month + 1
+                ano_fatura = data_compra.year
+        
+        # Procurar a fatura
+        fatura = FaturaCartao.query.filter_by(
+            usuario_id=usuario_id,
+            cartao_id=cartao_id,
+            mes=mes_fatura,
+            ano=ano_fatura
+        ).first()
+        
+        if fatura:
+            print(f"✅ Fatura encontrada: {mes_fatura:02d}/{ano_fatura}")
+            print(f"   Valor anterior: R$ {fatura.valor_total}")
+            
+            # SUBTRAIR O VALOR DA FATURA
+            fatura.valor_total -= valor_compra
+            fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+            
+            print(f"   Valor novo: R$ {fatura.valor_total}")
+            
+            # SE FATURA FICAR COM VALOR 0, DELETAR
+            if fatura.valor_total <= 0:
+                print(f"   Fatura com valor 0, deletando...")
+                db.session.delete(fatura)
+            
+            print(f"✅ Fatura atualizada!")
+    
+    # DELETAR A COMPRA
     db.session.delete(compra)
     db.session.commit()
 
@@ -1709,6 +2008,102 @@ def erro_interno(e):
                            mensagem='Ocorreu um erro no servidor. Tente novamente mais tarde.',
                            codigo=500), 500
 
+# ===== ROTAS DE FATURAS =====
+
+@app.route('/faturas', methods=['GET'])
+@login_required
+def listar_faturas():
+    """Lista todas as faturas do usuário"""
+    cartoes = CartaoCredito.query.filter_by(usuario_id=current_user.id).all()
+    
+    faturas_por_cartao = {}
+    
+    for cartao in cartoes:
+        faturas = FaturaCartao.query.filter_by(
+            usuario_id=current_user.id,
+            cartao_id=cartao.id
+        ).order_by(FaturaCartao.ano.desc(), FaturaCartao.mes.desc()).all()
+        
+        if faturas:
+            faturas_por_cartao[cartao.id] = {
+                'cartao': cartao,
+                'faturas': faturas
+            }
+    
+    # Resumo
+    total_em_aberto = sum(
+        f.valor_restante for f in FaturaCartao.query.filter_by(
+            usuario_id=current_user.id,
+            status='aberta'
+        ).all()
+    )
+    
+    total_atrasado = sum(
+        f.valor_restante for f in FaturaCartao.query.filter_by(
+            usuario_id=current_user.id,
+            status='atrasada'
+        ).all()
+    )
+    
+    return render_template(
+        'faturas.html',
+        faturas_por_cartao=faturas_por_cartao,
+        total_em_aberto=total_em_aberto,
+        total_atrasado=total_atrasado
+    )
+
+@app.route('/faturas/<int:fatura_id>', methods=['GET'])
+@login_required
+def detalhar_fatura(fatura_id):
+    """Mostra detalhes da fatura"""
+    fatura = FaturaCartao.query.get_or_404(fatura_id)
+    
+    if fatura.usuario_id != current_user.id:
+        abort(403)
+    
+    # Pegar transações da fatura
+    transacoes = TransacaoFatura.query.filter_by(fatura_id=fatura_id).all()
+    
+    # Pegar pagamentos registrados
+    pagamentos = PagamentoFatura.query.filter_by(fatura_id=fatura_id).all()
+    
+    # Bancos disponíveis para pagamento
+    bancos = Banco.query.filter_by(usuario_id=current_user.id).all()
+    
+    return render_template(
+        'detalhar_fatura.html',
+        fatura=fatura,
+        transacoes=transacoes,
+        pagamentos=pagamentos,
+        bancos=bancos
+    )
+
+@app.route('/faturas/<int:fatura_id>/pagar', methods=['POST'])
+@login_required
+def pagar_fatura_route(fatura_id):
+    """Processa o pagamento de uma fatura"""
+    fatura = FaturaCartao.query.get_or_404(fatura_id)
+    
+    if fatura.usuario_id != current_user.id:
+        abort(403)
+    
+    valor = parse_valor(request.form.get('valor', '0'))
+    banco_id = request.form.get('banco_id', type=int)
+    
+    if valor <= 0 or valor > fatura.valor_restante:
+        flash('❌ Valor de pagamento inválido!', 'danger')
+        return redirect(url_for('detalhar_fatura', fatura_id=fatura_id))
+    
+    sucesso, mensagem = pagar_fatura(fatura_id, valor, banco_id)
+    
+    if sucesso:
+        flash(f'✅ {mensagem}', 'success')
+    else:
+        flash(f'❌ {mensagem}', 'danger')
+    
+    return redirect(url_for('detalhar_fatura', fatura_id=fatura_id))
+
+# ===== FIM DAS ROTAS DE FATURAS =====
 
 # Criar as tabelas na inicialização
 with app.app_context():
