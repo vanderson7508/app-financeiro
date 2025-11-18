@@ -16,6 +16,53 @@ import logging
 from flask import flash
 
 app = Flask(__name__)
+
+# ===== FUNÇÃO PARA CONVERTER VALORES COM VÍRGULA OU PONTO =====
+
+
+def parse_valor(valor_str):
+    """Converte string com vírgula ou ponto para float"""
+    if not valor_str or not str(valor_str).strip():
+        return 0.0
+
+    valor_str = str(valor_str).strip()
+
+    # Se tem vírgula, substitui por ponto
+    # Se tem ponto antes de vírgula, remove o ponto
+    if ',' in valor_str:
+        # Formato: 250,99 ou 1.250,99
+        valor_str = valor_str.replace('.', '').replace(',', '.')
+    else:
+        # Formato: 250.99 ou 250
+        valor_str = valor_str.replace(',', '')
+
+    try:
+        return float(valor_str)
+    except ValueError:
+        return 0.0
+
+# ===== FIM DA FUNÇÃO =====
+
+# Filtro para formatar valores monetários
+
+
+@app.template_filter('format_decimal')
+def format_decimal(value):
+    if value is None:
+        return '0.00'
+    try:
+        return "{:.2f}".format(float(value)).replace('.', ',')
+    except (ValueError, TypeError):
+        return '0.00'
+
+# Filtro para converter para valor correto
+
+
+@app.context_processor
+def inject_utils():
+    return dict(parse_value=parse_valor)
+
+
 app.config['SECRET_KEY'] = os.environ.get(
     'SECRET_KEY', 'dev-secret-key-change-in-production')
 
@@ -409,9 +456,7 @@ def adicionar():
             return redirect(url_for('criar_banco'))
 
         descricao = request.form.get('descricao')
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         categoria = request.form.get('categoria')
         tipo = request.form.get('tipo')
         data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
@@ -521,9 +566,7 @@ def editar(id):
 
     if request.method == 'POST':
         transacao.descricao = request.form.get('descricao')
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         transacao.categoria = request.form.get('categoria')
         transacao.tipo = request.form.get('tipo')
         transacao.forma_pagamento = request.form.get('forma_pagamento')
@@ -723,9 +766,7 @@ def orcamentos():
 def criar_orcamento():
     if request.method == 'POST':
         categoria = request.form.get('categoria')
-        limite_str = request.form.get('limite', '0').strip()
-        limite_str = limite_str.replace('.', '').replace(',', '.')
-        limite = float(limite_str)
+        limite = parse_valor(request.form.get('limite', '0'))
         mes = request.form.get('mes', type=int)
         ano = request.form.get('ano', type=int)
 
@@ -760,9 +801,7 @@ def editar_orcamento(id):
     orcamento = verificar_propriedade_orcamento(id)
 
     if request.method == 'POST':
-        limite_str = request.form.get('limite', '0').strip()
-        limite_str = limite_str.replace('.', '').replace(',', '.')
-        limite = float(limite_str)
+        limite = parse_valor(request.form.get('limite', '0'))
 
         orcamento.limite_mensal = limite
         db.session.commit()
@@ -874,9 +913,7 @@ def recorrencias():
 def criar_recorrencia():
     if request.method == 'POST':
         descricao = request.form.get('descricao')
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         tipo = request.form.get('tipo')
         categoria = request.form.get('categoria')
         forma_pagamento = request.form.get('forma_pagamento')
@@ -919,9 +956,7 @@ def editar_recorrencia(id):
 
     if request.method == 'POST':
         recorrencia.descricao = request.form.get('descricao')
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        recorrencia.valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         recorrencia.tipo = request.form.get('tipo')
         recorrencia.categoria = request.form.get('categoria')
         recorrencia.forma_pagamento = request.form.get('forma_pagamento')
@@ -1062,9 +1097,7 @@ def bancos():
 def criar_banco():
     if request.method == 'POST':
         nome = request.form.get('nome')
-        saldo_str = request.form.get('saldo', '0').strip()
-        saldo_str = saldo_str.replace('.', '').replace(',', '.')
-        saldo = float(saldo_str)
+        saldo = parse_valor(request.form.get('saldo', '0'))
         tipo = request.form.get('tipo')
         descricao = request.form.get('descricao', '')
 
@@ -1103,7 +1136,42 @@ def editar_banco(id):
         banco.tipo = request.form.get('tipo')
         banco.descricao = request.form.get('descricao', '')
 
+        # Editar saldo se foi fornecido
+        saldo_str = request.form.get('saldo', '').strip()
+        if saldo_str:
+            novo_saldo = parse_valor(saldo_str)
+
+            # Calcular diferença
+            diferenca = novo_saldo - banco.saldo
+
+            if diferenca != 0:
+                # Atualizar saldo
+                banco.saldo = novo_saldo
+
+                # Registrar movimentação
+                tipo_movimento = 'entrada' if diferenca > 0 else 'saida'
+                descricao = request.form.get(
+                    'descricao_ajuste', 'Ajuste de saldo')
+
+                # Pegar a data, ou usar data de hoje se não preencheu
+                data_ajuste_str = request.form.get('data_ajuste', '').strip()
+                if data_ajuste_str:
+                    data = datetime.strptime(
+                        data_ajuste_str, '%Y-%m-%d').date()
+                else:
+                    data = date.today()
+
+                movimento = MovimentacaoBanco(
+                    banco_id=id,
+                    tipo_movimento=tipo_movimento,
+                    valor=abs(diferenca),
+                    descricao=descricao,
+                    data=data
+                )
+                db.session.add(movimento)
+
         db.session.commit()
+        flash(f'✅ Banco {banco.nome} atualizado com sucesso!', 'success')
         return redirect(url_for('bancos'))
 
     return render_template('editar_banco.html', banco=banco)
@@ -1115,12 +1183,13 @@ def deletar_banco(id):
     # SEGURANÇA: Verificar propriedade
     banco = verificar_propriedade_banco(id)
 
-    if banco.movimentacoes:
-        return redirect(url_for('bancos'))
+    # Deletar todas as movimentações do banco
+    MovimentacaoBanco.query.filter_by(banco_id=id).delete()
 
     db.session.delete(banco)
     db.session.commit()
 
+    flash('✅ Banco deletado com sucesso!', 'success')
     return redirect(url_for('bancos'))
 
 
@@ -1142,9 +1211,7 @@ def adicionar_saldo(id):
     banco = verificar_propriedade_banco(id)
 
     if request.method == 'POST':
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         descricao = request.form.get('descricao')
         data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
 
@@ -1173,9 +1240,7 @@ def sacar_saldo(id):
     banco = verificar_propriedade_banco(id)
 
     if request.method == 'POST':
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         descricao = request.form.get('descricao')
         data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
 
@@ -1211,9 +1276,7 @@ def transferencia():
         banco_origem = verificar_propriedade_banco(banco_origem_id)
         banco_destino = verificar_propriedade_banco(banco_destino_id)
 
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         descricao = request.form.get('descricao')
         data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
 
@@ -1256,6 +1319,7 @@ def transferencia():
 
     return render_template('transferencia.html', bancos=bancos_lista)
 
+
 @app.route('/carteira/transferir', methods=['GET', 'POST'])
 @login_required
 def transferir_carteira():
@@ -1280,9 +1344,7 @@ def transferir_carteira():
 
     if request.method == 'POST':
         banco_id = request.form.get('banco_id', type=int)
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor = float(valor_str)
+        valor = parse_valor(request.form.get('valor', '0'))
         descricao = request.form.get('descricao', 'Transferência da carteira')
         data = datetime.strptime(request.form.get('data'), '%Y-%m-%d').date()
 
@@ -1335,12 +1397,13 @@ def transferir_carteira():
 
         db.session.commit()
 
-        flash(f'✅ Transferência de R$ {valor:.2f} realizada com sucesso!', 'success')
+        flash(
+            f'✅ Transferência de R$ {valor:.2f} realizada com sucesso!', 'success')
         return redirect(url_for('home'))
 
     return render_template('transferir_carteira.html',
-                          saldo_carteira=saldo_carteira,
-                          bancos=bancos)
+                           saldo_carteira=saldo_carteira,
+                           bancos=bancos)
 
 # ===== ROTAS DE CARTÃO DE CRÉDITO =====
 
@@ -1455,9 +1518,7 @@ def criar_compra_cartao():
         cartao = verificar_propriedade_cartao(cartao_id)
 
         descricao = request.form.get('descricao')
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        valor_total = float(valor_str)
+        valor_total = parse_valor(request.form.get('valor', '0'))
         quantidade_parcelas = request.form.get(
             'quantidade_parcelas', type=int, default=1)
         categoria = request.form.get('categoria')
@@ -1491,9 +1552,7 @@ def editar_compra_cartao(id):
 
     if request.method == 'POST':
         compra.descricao = request.form.get('descricao')
-        valor_str = request.form.get('valor', '0').strip()
-        valor_str = valor_str.replace('.', '').replace(',', '.')
-        compra.valor_total = float(valor_str)
+        compra.valor_total = parse_valor(request.form.get('valor', '0'))
         compra.quantidade_parcelas = request.form.get(
             'quantidade_parcelas', type=int)
         compra.categoria = request.form.get('categoria')
