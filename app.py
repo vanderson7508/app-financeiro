@@ -566,7 +566,7 @@ def editar(id):
 
     if request.method == 'POST':
         transacao.descricao = request.form.get('descricao')
-        valor = parse_valor(request.form.get('valor', '0'))
+        transacao.valor = parse_valor(request.form.get('valor', '0'))
         transacao.categoria = request.form.get('categoria')
         transacao.tipo = request.form.get('tipo')
         transacao.forma_pagamento = request.form.get('forma_pagamento')
@@ -576,7 +576,8 @@ def editar(id):
         db.session.commit()
         return redirect(url_for('lista_transacoes'))
 
-    return render_template('editar.html', transacao=transacao)
+    categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()
+    return render_template('editar.html', transacao=transacao, categorias=categorias)
 
 
 @app.route('/deletar/<int:id>', methods=['POST'])
@@ -956,7 +957,9 @@ def editar_recorrencia(id):
 
     if request.method == 'POST':
         recorrencia.descricao = request.form.get('descricao')
-        valor = parse_valor(request.form.get('valor', '0'))
+        valor_str = request.form.get('valor', '0').strip()
+        valor_str = valor_str.replace('.', '').replace(',', '.')
+        recorrencia.valor = float(valor_str)
         recorrencia.tipo = request.form.get('tipo')
         recorrencia.categoria = request.form.get('categoria')
         recorrencia.forma_pagamento = request.form.get('forma_pagamento')
