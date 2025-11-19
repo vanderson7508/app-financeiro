@@ -2657,7 +2657,7 @@ def pagar_fatura_route(fatura_id):
 
     return redirect(url_for('detalhar_fatura', fatura_id=fatura_id))
 
-# ===== FIM DAS ROTAS DE FATURAS =====
+# ===== FIM DAS ROTAS DE FATURAS ====
 
 
 # Criar as tabelas na inicialização
