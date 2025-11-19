@@ -635,7 +635,7 @@ def home():
     """Página inicial com resumo financeiro"""
 
     # ✅ Processar recorrências antes de mostrar o dashboard
-    #processar_recorrencias()
+    processar_recorrencias()
 
     transacoes = Transacao.query.filter_by(usuario_id=current_user.id).all()
 
