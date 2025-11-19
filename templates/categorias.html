@@ -1,246 +1,332 @@
 {% extends "base.html" %}
-
-{% block title %}Categorias - Controle Financeiro{% endblock %}
-
+{% block title %}Minhas Categorias - Financeiro{% endblock %}
 {% block content %}
+
 <style>
-    .header-section {
+    .categorias-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+
+    .header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
+        margin-bottom: 35px;
         flex-wrap: wrap;
         gap: 20px;
     }
 
-    .page-title {
-        font-size: 1.8em;
-        font-weight: 700;
-        color: #333;
+    .header h1 {
+        font-size: 2em;
+        color: #2c3e50;
+        margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .btn-criar {
+    .header-icon {
+        font-size: 1.5em;
+    }
+
+    .btn-nova-categoria {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 12px 25px;
         border: none;
+        padding: 12px 24px;
         border-radius: 8px;
-        text-decoration: none;
         font-weight: 600;
         cursor: pointer;
+        text-decoration: none;
         transition: all 0.3s ease;
         display: flex;
         align-items: center;
         gap: 8px;
     }
 
-    .btn-criar:hover {
+    .btn-nova-categoria:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
     }
 
-    .categorias-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-    }
-
-    .categoria-card {
+    .categorias-lista {
         background: white;
         border-radius: 12px;
-        padding: 25px;
+        overflow: hidden;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        border-left: 5px solid #667eea;
-        transition: all 0.3s ease;
-    }
-
-    .categoria-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
     }
 
     .categoria-header {
-        display: flex;
+        display: grid;
+        grid-template-columns: 40px 1fr 150px 150px 120px;
+        gap: 20px;
+        padding: 16px 24px;
+        background: #f8f9fa;
+        border-bottom: 2px solid #e0e0e0;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.95em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .categoria-item {
+        display: grid;
+        grid-template-columns: 40px 1fr 150px 150px 120px;
+        gap: 20px;
+        padding: 16px 24px;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+    }
+
+    .categoria-item:hover {
+        background: #f8f9ff;
+    }
+
+    .categoria-item:last-child {
+        border-bottom: none;
     }
 
     .categoria-icon {
-        font-size: 1.8em;
+        font-size: 1.4em;
+        text-align: center;
+    }
+
+    .categoria-info {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 
     .categoria-nome {
-        font-size: 1.2em;
-        font-weight: 700;
-        color: #333;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 1em;
     }
 
     .categoria-descricao {
         color: #999;
         font-size: 0.9em;
-        line-height: 1.5;
-        margin-bottom: 18px;
-        min-height: 40px;
-    }
-
-    .categoria-descricao.vazia {
-        color: #ccc;
         font-style: italic;
     }
 
-    .categoria-actions {
-        display: flex;
-        gap: 10px;
+    .categoria-id {
+        color: #999;
+        font-size: 0.85em;
     }
 
-    .btn-action {
-        flex: 1;
-        padding: 10px;
+    .categoria-acoes {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .btn-editar,
+    .btn-deletar {
+        padding: 8px 16px;
         border: none;
         border-radius: 6px;
-        font-size: 0.85em;
         font-weight: 600;
+        font-size: 0.9em;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
         text-decoration: none;
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 5px;
+        gap: 6px;
     }
 
     .btn-editar {
-        background: #3b82f6;
+        background: #667eea;
         color: white;
     }
 
     .btn-editar:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
+        background: #5568d3;
+        box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
     }
 
     .btn-deletar {
         background: #ef4444;
         color: white;
+        border: none;
     }
 
     .btn-deletar:hover {
         background: #dc2626;
-        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
     }
 
     .empty-state {
         text-align: center;
-        padding: 80px 20px;
+        padding: 60px 20px;
         color: #999;
-        grid-column: 1 / -1;
     }
 
     .empty-state-icon {
-        font-size: 4em;
-        margin-bottom: 20px;
-    }
-
-    .empty-state-title {
-        font-size: 1.5em;
-        font-weight: 600;
-        margin-bottom: 10px;
-        color: #666;
+        font-size: 3em;
+        margin-bottom: 15px;
     }
 
     .empty-state-text {
-        margin-bottom: 30px;
-        font-size: 1em;
+        font-size: 1.1em;
+        margin-bottom: 20px;
+        color: #666;
     }
 
-    .btn-criar-vazio {
+    .empty-state-cta {
+        display: inline-block;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 12px 30px;
-        border: none;
+        padding: 12px 24px;
         border-radius: 8px;
         text-decoration: none;
         font-weight: 600;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+        transition: all 0.3s ease;
     }
 
-    .categoria-stats {
-        font-size: 0.85em;
-        color: #667eea;
-        padding-top: 15px;
-        border-top: 1px solid #f0f0f0;
-        margin-top: 15px;
+    .empty-state-cta:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .total-categorias {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #666;
+        font-size: 0.95em;
+        margin-top: 20px;
+        padding: 0 24px;
+        padding-bottom: 20px;
+    }
+
+    .total-badge {
+        background: #667eea;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9em;
     }
 
     @media (max-width: 768px) {
-        .header-section {
+        .header {
             flex-direction: column;
             align-items: flex-start;
         }
 
-        .page-title {
-            font-size: 1.3em;
+        .header h1 {
+            font-size: 1.5em;
         }
 
-        .categorias-grid {
-            grid-template-columns: 1fr;
+        .btn-nova-categoria {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .categoria-header,
+        .categoria-item {
+            grid-template-columns: 30px 1fr 80px;
+            gap: 15px;
+        }
+
+        .categoria-id,
+        .categoria-acoes {
+            display: none;
+        }
+
+        .categoria-item {
+            padding: 12px 16px;
+        }
+
+        .categoria-header {
+            padding: 12px 16px;
+        }
+
+        .btn-editar,
+        .btn-deletar {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .categoria-nome {
+            font-size: 0.95em;
         }
     }
 </style>
 
-<div class="header-section">
-    <h1 class="page-title">📂 Minhas Categorias</h1>
-    <a href="{{ url_for('criar_categoria') }}" class="btn-criar">➕ Nova Categoria</a>
-</div>
+<div class="categorias-container">
+    <!-- Header -->
+    <div class="header">
+        <h1><span class="header-icon">📂</span> Minhas Categorias</h1>
+        <a href="{{ url_for('criar_categoria') }}" class="btn-nova-categoria">
+            ➕ Nova Categoria
+        </a>
+    </div>
 
-{% if categorias %}
-    <div class="categorias-grid">
-        {% for categoria in categorias %}
-        <div class="categoria-card">
+    <!-- Lista de Categorias -->
+    {% if categorias %}
+        <div class="categorias-lista">
+            <!-- Cabeçalho -->
             <div class="categoria-header">
-                <span class="categoria-icon">📁</span>
-                <h3 class="categoria-nome">{{ categoria.nome }}</h3>
+                <div></div>
+                <div>Nome</div>
+                <div>Descrição</div>
+                <div>ID</div>
+                <div>Ações</div>
             </div>
 
-            <div class="categoria-descricao {% if not categoria.descricao %}vazia{% endif %}">
-                {% if categoria.descricao %}
-                    {{ categoria.descricao }}
-                {% else %}
-                    Sem descrição
-                {% endif %}
-            </div>
+            <!-- Categorias -->
+            {% for categoria in categorias %}
+                <div class="categoria-item">
+                    <div class="categoria-icon">📂</div>
+                    <div class="categoria-info">
+                        <div class="categoria-nome">{{ categoria.nome }}</div>
+                    </div>
+                    <div class="categoria-descricao">
+                        {% if categoria.descricao %}
+                            {{ categoria.descricao }}
+                        {% else %}
+                            <em style="color: #ccc;">Sem descrição</em>
+                        {% endif %}
+                    </div>
+                    <div class="categoria-id">🔖 ID: {{ categoria.id }}</div>
+                    <div class="categoria-acoes">
+                        <a href="{{ url_for('editar_categoria', id=categoria.id) }}" class="btn-editar">
+                            ✏️ Editar
+                        </a>
+                        <form method="POST" action="{{ url_for('deletar_categoria', id=categoria.id) }}" style="display: inline;">
+                            <button type="submit" class="btn-deletar" onclick="return confirm('Tem certeza que deseja deletar esta categoria?');">
+                                🗑️ Deletar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
 
-            <div class="categoria-actions">
-                <a href="{{ url_for('editar_categoria', id=categoria.id) }}" class="btn-action btn-editar">
-                    ✏️ Editar
+        <!-- Total de Categorias -->
+        <div class="total-categorias">
+            Total de categorias:
+            <span class="total-badge">{{ categorias|length }}</span>
+        </div>
+
+    {% else %}
+        <!-- Estado Vazio -->
+        <div class="categorias-lista">
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <p class="empty-state-text">Nenhuma categoria cadastrada ainda</p>
+                <a href="{{ url_for('criar_categoria') }}" class="empty-state-cta">
+                    ➕ Criar Primeira Categoria
                 </a>
-                <form method="POST" action="{{ url_for('deletar_categoria', id=categoria.id) }}" style="flex: 1; margin: 0;" onsubmit="return confirm('Tem certeza que deseja deletar esta categoria? (Não pode ter transações vinculadas)');">
-                    <button type="submit" class="btn-action btn-deletar" style="width: 100%;">
-                        🗑️ Deletar
-                    </button>
-                </form>
-            </div>
-
-            <div class="categoria-stats">
-                📌 ID: {{ categoria.id }}
             </div>
         </div>
-        {% endfor %}
-    </div>
-{% else %}
-    <div class="empty-state">
-        <div class="empty-state-icon">📭</div>
-        <div class="empty-state-title">Nenhuma categoria cadastrada</div>
-        <div class="empty-state-text">Crie categorias para organizar melhor suas transações</div>
-        <a href="{{ url_for('criar_categoria') }}" class="btn-criar-vazio">➕ Criar Categoria</a>
-    </div>
-{% endif %}
+    {% endif %}
+</div>
 
 {% endblock %}

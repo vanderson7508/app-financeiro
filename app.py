@@ -557,14 +557,23 @@ def home():
     """Página inicial com resumo financeiro"""
     transacoes = Transacao.query.filter_by(usuario_id=current_user.id).all()
 
-    total_receitas = sum(t.valor for t in transacoes if t.tipo == 'Receita')
-    total_despesas = sum(t.valor for t in transacoes if t.tipo == 'Despesa')
+    # ✅ BUG 4 FIX: NÃO contar transações de CARTÃO no total de receitas/despesas
+    # Apenas contar transações de BANCO
+    total_receitas = sum(t.valor for t in transacoes if t.tipo ==
+                         'Receita' and t.forma_pagamento != 'Cartão de Crédito')
+    total_despesas = sum(t.valor for t in transacoes if t.tipo ==
+                         'Despesa' and t.forma_pagamento != 'Cartão de Crédito')
 
     bancos = Banco.query.filter_by(usuario_id=current_user.id).all()
     saldo_bancos = sum(banco.saldo for banco in bancos)
 
+    # ✅ BUG 4 FIX: Carteira = apenas transações sem banco_id E que NÃO sejam cartão
     transacoes_carteira = Transacao.query.filter_by(
         usuario_id=current_user.id, banco_id=None).all()
+    # Excluir transações de CARTÃO DE CRÉDITO
+    transacoes_carteira = [
+        t for t in transacoes_carteira if t.forma_pagamento != 'Cartão de Crédito']
+
     receitas_carteira = sum(
         t.valor for t in transacoes_carteira if t.tipo == 'Receita')
     despesas_carteira = sum(
@@ -734,16 +743,235 @@ def editar(id):
     transacao = verificar_propriedade_transacao(id)
 
     if request.method == 'POST':
-        transacao.descricao = request.form.get('descricao')
-        transacao.valor = parse_valor(request.form.get('valor', '0'))
-        transacao.categoria = request.form.get('categoria')
-        transacao.tipo = request.form.get('tipo')
-        transacao.forma_pagamento = request.form.get('forma_pagamento')
-        transacao.data = datetime.strptime(
-            request.form.get('data'), '%Y-%m-%d').date()
+        try:
+            # ✅ Guardar valores antigos para sincronização
+            valor_antigo = transacao.valor
+            forma_pagamento_antiga = transacao.forma_pagamento
+            data_antiga = transacao.data
 
-        db.session.commit()
-        return redirect(url_for('lista_transacoes'))
+            # Atualizar transação
+            transacao.descricao = request.form.get('descricao')
+            valor_novo = parse_valor(request.form.get('valor', '0'))
+            transacao.valor = valor_novo
+            transacao.categoria = request.form.get('categoria')
+            transacao.tipo = request.form.get('tipo')
+            transacao.forma_pagamento = request.form.get('forma_pagamento')
+            transacao.data = datetime.strptime(
+                request.form.get('data'), '%Y-%m-%d').date()
+
+            # ✅ Se for CARTÃO DE CRÉDITO, banco_id DEVE ser None!
+            if transacao.forma_pagamento == 'Cartão de Crédito':
+                transacao.banco_id = None
+
+            db.session.commit()
+
+            # ✅ SINCRONIZAÇÃO: Se mudou a forma de pagamento
+            if forma_pagamento_antiga != transacao.forma_pagamento:
+                print(f"🔄 Mudança de forma de pagamento detectada!")
+                print(f"   De: {forma_pagamento_antiga}")
+                print(f"   Para: {transacao.forma_pagamento}")
+
+                # Se ERA cartão e DEIXOU de ser cartão → DELETAR de CompraCartao
+                if forma_pagamento_antiga == 'Cartão de Crédito' and transacao.forma_pagamento != 'Cartão de Crédito':
+                    print(f"   ❌ Removendo de Compras do Cartão...")
+
+                    compra = CompraCartao.query.filter_by(
+                        usuario_id=transacao.usuario_id,
+                        descricao=transacao.descricao,
+                        data_compra=data_antiga
+                    ).first()
+
+                    if compra:
+                        print(f"   ✅ Compra encontrada, deletando...")
+                        valor_compra = compra.valor_total
+                        cartao_id = compra.cartao_id
+
+                        # Atualizar fatura
+                        cartao = CartaoCredito.query.get(cartao_id)
+                        if cartao:
+                            if compra.data_compra.day <= cartao.dia_fechamento:
+                                mes_fatura = compra.data_compra.month
+                                ano_fatura = compra.data_compra.year
+                            else:
+                                if compra.data_compra.month == 12:
+                                    mes_fatura = 1
+                                    ano_fatura = compra.data_compra.year + 1
+                                else:
+                                    mes_fatura = compra.data_compra.month + 1
+                                    ano_fatura = compra.data_compra.year
+
+                            fatura = FaturaCartao.query.filter_by(
+                                usuario_id=transacao.usuario_id,
+                                cartao_id=cartao_id,
+                                mes=mes_fatura,
+                                ano=ano_fatura
+                            ).first()
+
+                            if fatura:
+                                fatura.valor_total -= valor_compra
+                                fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+
+                                if fatura.valor_total <= 0:
+                                    db.session.delete(fatura)
+
+                                db.session.commit()
+                                print(f"   ✅ Fatura atualizada!")
+
+                        db.session.delete(compra)
+                        db.session.commit()
+                        flash(
+                            f'✅ Transação movida para {transacao.forma_pagamento}! Removida de Compras do Cartão.', 'success')
+
+                # Se NÃO ERA cartão e PASSOU a ser cartão → CRIAR em CompraCartao
+                elif forma_pagamento_antiga != 'Cartão de Crédito' and transacao.forma_pagamento == 'Cartão de Crédito':
+                    print(f"   ✅ Adicionando a Compras do Cartão...")
+
+                    # Encontrar qual cartão usar (o primeiro ou de uma forma definida)
+                    cartoes = CartaoCredito.query.filter_by(
+                        usuario_id=transacao.usuario_id).all()
+                    if cartoes:
+                        cartao = cartoes[0]  # Usar o primeiro cartão
+
+                        # Criar CompraCartao
+                        nova_compra = CompraCartao(
+                            usuario_id=transacao.usuario_id,
+                            cartao_id=cartao.id,
+                            descricao=transacao.descricao,
+                            valor_total=transacao.valor,
+                            quantidade_parcelas=1,
+                            categoria=transacao.categoria,
+                            data_compra=transacao.data,
+                            forma_pagamento='Cartão de Crédito',  # ✅ ADICIONAR FORMA DE PAGAMENTO!
+                            status='pendente'
+                        )
+                        db.session.add(nova_compra)
+                        db.session.commit()
+
+                        # Atualizar/Criar fatura
+                        if transacao.data.day <= cartao.dia_fechamento:
+                            mes_fatura = transacao.data.month
+                            ano_fatura = transacao.data.year
+                        else:
+                            if transacao.data.month == 12:
+                                mes_fatura = 1
+                                ano_fatura = transacao.data.year + 1
+                            else:
+                                mes_fatura = transacao.data.month + 1
+                                ano_fatura = transacao.data.year
+
+                        fatura = FaturaCartao.query.filter_by(
+                            usuario_id=transacao.usuario_id,
+                            cartao_id=cartao.id,
+                            mes=mes_fatura,
+                            ano=ano_fatura
+                        ).first()
+
+                        if not fatura:
+                            # ✅ Calcular data de fechamento baseada no cartão
+                            if mes_fatura == 12:
+                                proximo_mes = 1
+                                proximo_ano = ano_fatura + 1
+                            else:
+                                proximo_mes = mes_fatura + 1
+                                proximo_ano = ano_fatura
+
+                            try:
+                                data_fechamento = datetime(
+                                    proximo_ano, proximo_mes, cartao.dia_fechamento).date()
+                            except:
+                                # Se dia não existe no mês, usar último dia do mês
+                                if proximo_mes == 2:
+                                    data_fechamento = datetime(
+                                        proximo_ano, 3, 1).date() - timedelta(days=1)
+                                else:
+                                    data_fechamento = datetime(
+                                        proximo_ano, proximo_mes + 1, 1).date() - timedelta(days=1)
+
+                            fatura = FaturaCartao(
+                                usuario_id=transacao.usuario_id,
+                                cartao_id=cartao.id,
+                                mes=mes_fatura,
+                                ano=ano_fatura,
+                                valor_total=transacao.valor,
+                                valor_pago=0,
+                                valor_restante=transacao.valor,
+                                data_fechamento=data_fechamento,
+                                data_vencimento=data_fechamento +
+                                # Vencimento 10 dias depois
+                                timedelta(days=10),
+                                status='aberta'
+                            )
+                            db.session.add(fatura)
+                        else:
+                            fatura.valor_total += transacao.valor
+                            fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+
+                        db.session.commit()
+                        print(f"   ✅ Compra criada e fatura atualizada!")
+                        flash(
+                            f'✅ Transação movida para Cartão de Crédito! Adicionada em Compras do Cartão.', 'success')
+                    else:
+                        flash(
+                            f'⚠️ Nenhum cartão cadastrado para adicionar esta transação.', 'warning')
+
+            # ✅ Se continua sendo cartão, atualizar fatura com diferença
+            elif (transacao.forma_pagamento == 'Cartão de Crédito' and
+                  forma_pagamento_antiga == 'Cartão de Crédito'):
+
+                diferenca = valor_novo - valor_antigo
+
+                if diferenca != 0:
+                    print(
+                        f"✏️ Editando transação de cartão: {transacao.descricao}")
+                    print(f"   Diferença: R$ {diferenca:.2f}")
+
+                    compra = CompraCartao.query.filter_by(
+                        usuario_id=transacao.usuario_id,
+                        descricao=transacao.descricao,
+                        data_compra=data_antiga
+                    ).first()
+
+                    if compra:
+                        compra.valor_total = valor_novo
+                        compra.data_compra = transacao.data
+                        db.session.commit()
+
+                        cartao = CartaoCredito.query.get(compra.cartao_id)
+
+                        if cartao:
+                            if compra.data_compra.day <= cartao.dia_fechamento:
+                                mes_fatura = compra.data_compra.month
+                                ano_fatura = compra.data_compra.year
+                            else:
+                                if compra.data_compra.month == 12:
+                                    mes_fatura = 1
+                                    ano_fatura = compra.data_compra.year + 1
+                                else:
+                                    mes_fatura = compra.data_compra.month + 1
+                                    ano_fatura = compra.data_compra.year
+
+                            fatura = FaturaCartao.query.filter_by(
+                                usuario_id=transacao.usuario_id,
+                                cartao_id=compra.cartao_id,
+                                mes=mes_fatura,
+                                ano=ano_fatura
+                            ).first()
+
+                            if fatura:
+                                fatura.valor_total += diferenca
+                                fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+                                db.session.commit()
+                                print(f"✅ Fatura atualizada!")
+
+            return redirect(url_for('lista_transacoes'))
+
+        except Exception as e:
+            print(f"❌ ERRO ao editar transação: {e}")
+            import traceback
+            traceback.print_exc()
+            db.session.rollback()
+            flash(f'❌ Erro ao editar: {str(e)}', 'danger')
+            return redirect(url_for('lista_transacoes'))
 
     categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()
     return render_template('editar.html', transacao=transacao, categorias=categorias)
@@ -1020,11 +1248,22 @@ def criar_orcamento():
     mes_atual = date.today().month
     ano_atual = date.today().year
 
-    todas_as_categorias = db.session.query(Transacao.categoria).filter_by(
-        usuario_id=current_user.id).distinct().all()
-    categorias = sorted([cat[0] for cat in todas_as_categorias])
+    # ✅ CORREÇÃO: Buscar categorias do modelo + transações
+    categorias_modelo = Categoria.query.filter_by(
+        usuario_id=current_user.id).all()
+    categorias_modelo_nomes = [cat.nome for cat in categorias_modelo]
 
-    return render_template('criar_orcamento.html', categorias=categorias, mes_padrao=mes_atual, ano_padrao=ano_atual)
+    # Adicionar também categorias de transações já criadas
+    categorias_transacao = db.session.query(Transacao.categoria).filter_by(
+        usuario_id=current_user.id).distinct().all()
+    categorias_transacao_nomes = [cat[0]
+                                  for cat in categorias_transacao if cat[0]]
+
+    # Combinar e remover duplicatas
+    todas_categorias = sorted(
+        set(categorias_modelo_nomes + categorias_transacao_nomes))
+
+    return render_template('criar_orcamento.html', categorias=todas_categorias, mes_padrao=mes_atual, ano_padrao=ano_atual)
 
 
 @app.route('/orcamentos/editar/<int:id>', methods=['GET', 'POST'])
@@ -1555,14 +1794,94 @@ def transferencia():
     return render_template('transferencia.html', bancos=bancos_lista)
 
 
+@app.route('/carteira/editar', methods=['GET', 'POST'])
+@login_required
+def editar_carteira():
+    """Editar saldo da carteira (dinheiro físico)"""
+
+    # Pegar saldo atual da carteira de transações
+    transacoes_carteira = Transacao.query.filter_by(
+        usuario_id=current_user.id, banco_id=None).all()
+    transacoes_carteira = [
+        t for t in transacoes_carteira if t.forma_pagamento != 'Cartão de Crédito']
+
+    receitas_carteira = sum(
+        t.valor for t in transacoes_carteira if t.tipo == 'Receita')
+    despesas_carteira = sum(
+        t.valor for t in transacoes_carteira if t.tipo == 'Despesa')
+    saldo_por_transacoes = receitas_carteira - despesas_carteira
+
+    if request.method == 'POST':
+        try:
+            novo_saldo = parse_valor(request.form.get('novo_saldo', '0'))
+            motivo = request.form.get('motivo', 'Ajuste de saldo da carteira')
+
+            # Calcular a diferença
+            diferenca = novo_saldo - saldo_por_transacoes
+
+            if diferenca == 0:
+                flash('✅ Saldo já está correto!', 'info')
+                return redirect(url_for('editar_carteira'))
+
+            # Criar transação de ajuste APENAS se houver diferença
+            if diferenca > 0:
+                # Se novo saldo é maior, adicionar receita
+                transacao = Transacao(
+                    usuario_id=current_user.id,
+                    descricao=f'🔧 Ajuste carteira: {motivo}',
+                    valor=diferenca,
+                    categoria='Ajuste',
+                    tipo='Receita',
+                    forma_pagamento='Dinheiro',
+                    data=date.today(),
+                    banco_id=None
+                )
+                print(f"💰 Adicionando R$ {diferenca:.2f} à carteira")
+                flash(
+                    f'✅ Carteira ajustada! Adicionado R$ {diferenca:.2f}', 'success')
+            else:
+                # Se novo saldo é menor, adicionar despesa
+                transacao = Transacao(
+                    usuario_id=current_user.id,
+                    descricao=f'🔧 Ajuste carteira: {motivo}',
+                    valor=abs(diferenca),
+                    categoria='Ajuste',
+                    tipo='Despesa',
+                    forma_pagamento='Dinheiro',
+                    data=date.today(),
+                    banco_id=None
+                )
+                print(f"💸 Removendo R$ {abs(diferenca):.2f} da carteira")
+                flash(
+                    f'✅ Carteira ajustada! Removido R$ {abs(diferenca):.2f}', 'success')
+
+            db.session.add(transacao)
+            db.session.commit()
+
+            return redirect(url_for('editar_carteira'))
+
+        except Exception as e:
+            print(f"❌ ERRO ao editar carteira: {e}")
+            import traceback
+            traceback.print_exc()
+            db.session.rollback()
+            flash(f'❌ Erro ao editar carteira: {str(e)}', 'danger')
+            return redirect(url_for('editar_carteira'))
+
+    return render_template('editar_carteira.html', saldo_atual=saldo_por_transacoes)
+
+
 @app.route('/carteira/transferir', methods=['GET', 'POST'])
 @login_required
 def transferir_carteira():
     """Transferir saldo da carteira para um banco"""
 
-    # Pegar saldo da carteira
+    # ✅ Pegar saldo da carteira - MESMO CÁLCULO DE editar_carteira()
     transacoes_carteira = Transacao.query.filter_by(
         usuario_id=current_user.id, banco_id=None).all()
+    # ✅ IMPORTANTE: Excluir transações de CARTÃO DE CRÉDITO!
+    transacoes_carteira = [
+        t for t in transacoes_carteira if t.forma_pagamento != 'Cartão de Crédito']
 
     receitas_carteira = sum(
         t.valor for t in transacoes_carteira if t.tipo == 'Receita')
@@ -1818,17 +2137,109 @@ def editar_compra_cartao(id):
     compra = verificar_propriedade_compra(id)
 
     if request.method == 'POST':
-        compra.descricao = request.form.get('descricao')
-        compra.valor_total = parse_valor(request.form.get('valor', '0'))
-        compra.quantidade_parcelas = request.form.get(
-            'quantidade_parcelas', type=int)
-        compra.categoria = request.form.get('categoria')
-        compra.data_compra = datetime.strptime(
-            request.form.get('data_compra'), '%Y-%m-%d').date()
+        try:
+            # ✅ Guardar valores antigos ANTES de mudar
+            valor_antigo = compra.valor_total
+            data_antiga = compra.data_compra
+            descricao_antiga = compra.descricao
 
-        db.session.commit()
+            # Atualizar compra
+            compra.descricao = request.form.get('descricao')
+            valor_novo = parse_valor(request.form.get('valor', '0'))
+            compra.valor_total = valor_novo
+            compra.quantidade_parcelas = request.form.get(
+                'quantidade_parcelas', type=int)
+            compra.categoria = request.form.get('categoria')
+            compra.data_compra = datetime.strptime(
+                request.form.get('data_compra'), '%Y-%m-%d').date()
 
-        return redirect(url_for('compras_cartao'))
+            db.session.commit()
+
+            # ✅ SINCRONIZAÇÃO BIDIRECIONAL: Atualizar também em Minhas Transações
+            transacao = Transacao.query.filter_by(
+                usuario_id=current_user.id,
+                descricao=descricao_antiga,
+                data=data_antiga,
+                forma_pagamento='Cartão de Crédito'
+            ).first()
+
+            if transacao:
+                print(f"🔄 Sincronizando com Minhas Transações...")
+                transacao.descricao = compra.descricao
+                transacao.valor = valor_novo
+                transacao.categoria = compra.categoria
+                transacao.data = compra.data_compra
+                db.session.commit()
+                print(f"✅ Transação sincronizada!")
+
+            # ✅ Calcular diferença e atualizar fatura
+            diferenca = valor_novo - valor_antigo
+
+            if diferenca != 0:  # Só atualizar se o valor mudou
+                print(f"✏️ Editando compra de cartão: {compra.descricao}")
+                print(f"   Valor anterior: R$ {valor_antigo:.2f}")
+                print(f"   Valor novo: R$ {valor_novo:.2f}")
+                print(f"   Diferença: R$ {diferenca:.2f}")
+
+                # Procurar a fatura do cartão
+                cartao = CartaoCredito.query.get(compra.cartao_id)
+
+                if cartao:
+                    # Determinar qual mês a compra pertence
+                    if compra.data_compra.day <= cartao.dia_fechamento:
+                        mes_fatura = compra.data_compra.month
+                        ano_fatura = compra.data_compra.year
+                    else:
+                        if compra.data_compra.month == 12:
+                            mes_fatura = 1
+                            ano_fatura = compra.data_compra.year + 1
+                        else:
+                            mes_fatura = compra.data_compra.month + 1
+                            ano_fatura = compra.data_compra.year
+
+                    # Procurar a fatura
+                    fatura = FaturaCartao.query.filter_by(
+                        usuario_id=current_user.id,
+                        cartao_id=compra.cartao_id,
+                        mes=mes_fatura,
+                        ano=ano_fatura
+                    ).first()
+
+                    if fatura:
+                        print(
+                            f"✅ Fatura encontrada: {mes_fatura:02d}/{ano_fatura}")
+                        print(
+                            f"   Fatura anterior: R$ {fatura.valor_total:.2f}")
+
+                        # ✅ Atualizar fatura com a diferença
+                        fatura.valor_total += diferenca
+                        fatura.valor_restante = fatura.valor_total - fatura.valor_pago
+
+                        print(f"   Fatura nova: R$ {fatura.valor_total:.2f}")
+
+                        db.session.commit()
+                        print(f"✅ Fatura atualizada!")
+                        flash(
+                            f'✅ Compra editada! Minhas Transações sincronizadas! Fatura atualizada para R$ {fatura.valor_total:.2f}', 'success')
+                    else:
+                        print(
+                            f"⚠️ Fatura não encontrada para {mes_fatura:02d}/{ano_fatura}")
+                        flash(
+                            f'✅ Compra editada e sincronizada mas fatura não encontrada', 'info')
+                else:
+                    print(f"⚠️ Cartão não encontrado")
+            else:
+                flash(f'✅ Compra editada e sincronizada com sucesso!', 'success')
+
+            return redirect(url_for('compras_cartao'))
+
+        except Exception as e:
+            print(f"❌ ERRO ao editar compra: {e}")
+            import traceback
+            traceback.print_exc()
+            db.session.rollback()
+            flash(f'❌ Erro ao editar compra: {str(e)}', 'danger')
+            return redirect(url_for('compras_cartao'))
 
     cartoes = CartaoCredito.query.filter_by(usuario_id=current_user.id).all()
     categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()

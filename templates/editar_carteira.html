@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}Editar Carteira - Financeiro{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+
+        .carteira-info {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-left: 4px solid #f5576c;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: white;
+            text-align: center;
+        }
+
+        .carteira-info h3 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .carteira-info .valor {
+            font-size: 2.5em;
+            color: white;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #f5576c;
+            box-shadow: 0 0 0 3px rgba(245, 87, 108, 0.1);
+        }
+
+        .info-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #92400e;
+            font-size: 0.95em;
+        }
+
+        .info-box strong {
+            color: #b45309;
+        }
+
+        .diferenca-box {
+            background: #f0f4ff;
+            border: 2px solid #667eea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            color: #333;
+            display: none;
+        }
+
+        .diferenca-box.positiva {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .diferenca-box.negativa {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #7f1d1d;
+        }
+
+        .diferenca-box.neutro {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+            color: #374151;
+        }
+
+        .diferenca-box p {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button,
+        .btn {
+            flex: 1;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-enviar {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-enviar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-cancelar {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancelar:hover {
+            background: #d0d0d0;
+        }
+
+        .saldo-atual {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 6px;
+            text-align: center;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 600px) {
+            .form-container {
+                padding: 25px;
+                margin: 20px;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+
+            .carteira-info .valor {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>💰 Editar Saldo da Carteira</h2>
+
+        <div class="carteira-info">
+            <h3>Saldo Atual</h3>
+            <div class="valor">R$ {{ "%.2f"|format(saldo_atual) }}</div>
+        </div>
+
+        <div class="info-box">
+            <p>💡 <strong>Como funciona:</strong> Digite o novo saldo desejado e o sistema criará um ajuste automático (receita ou despesa) na carteira.</p>
+        </div>
+
+        <div class="diferenca-box" id="diferenca-box">
+            <p id="diferenca-texto"></p>
+        </div>
+
+        <form method="POST" action="{{ url_for('editar_carteira') }}">
+            <div class="form-group">
+                <label for="novo_saldo">Novo Saldo da Carteira (R$) *</label>
+                <input 
+                    type="number" 
+                    id="novo_saldo" 
+                    name="novo_saldo" 
+                    placeholder="0.00" 
+                    step="0.01" 
+                    min="0"
+                    value="{{ "%.2f"|format(saldo_atual) }}"
+                    required
+                    onchange="calcularDiferenca()"
+                    oninput="calcularDiferenca()"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="motivo">Motivo do Ajuste (opcional)</label>
+                <textarea 
+                    id="motivo" 
+                    name="motivo" 
+                    placeholder="Ex: Ajuste de saldo inicial, Dinheiro encontrado, etc"
+                    rows="3"
+                ></textarea>
+            </div>
+
+            <div class="saldo-atual">
+                <p><strong>Saldo Atual:</strong> R$ <span id="saldo-atual">{{ "%.2f"|format(saldo_atual) }}</span></p>
+                <p><strong>Novo Saldo:</strong> R$ <span id="novo-saldo">{{ "%.2f"|format(saldo_atual) }}</span></p>
+            </div>
+
+            <div class="botoes">
+                <button type="submit" class="btn-enviar">✅ Salvar Ajuste</button>
+                <a href="{{ url_for('home') }}" class="btn btn-cancelar">❌ Cancelar</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const saldoAtual = {{ saldo_atual }};
+
+        function calcularDiferenca() {
+            const novoSaldoInput = document.getElementById('novo_saldo');
+            const novoSaldo = parseFloat(novoSaldoInput.value) || 0;
+            const diferenca = novoSaldo - saldoAtual;
+            
+            // Atualizar valores exibidos
+            document.getElementById('novo-saldo').textContent = novoSaldo.toFixed(2);
+            
+            const caixa = document.getElementById('diferenca-box');
+            const texto = document.getElementById('diferenca-texto');
+            
+            if (diferenca === 0) {
+                caixa.style.display = 'none';
+            } else if (diferenca > 0) {
+                caixa.style.display = 'block';
+                caixa.className = 'diferenca-box positiva';
+                texto.textContent = `💰 Adicionará R$ ${diferenca.toFixed(2)} à sua carteira`;
+            } else {
+                caixa.style.display = 'block';
+                caixa.className = 'diferenca-box negativa';
+                texto.textContent = `💸 Removerá R$ ${Math.abs(diferenca).toFixed(2)} da sua carteira`;
+            }
+        }
+
+        // Calcular ao carregar a página
+        calcularDiferenca();
+    </script>
+</body>
+</html>
+{% endblock %}

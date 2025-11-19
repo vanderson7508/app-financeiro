@@ -399,20 +399,24 @@
         // Auto-preencher data de hoje
         document.getElementById('data').valueAsDate = new Date();
 
-        // Função para mostrar/esconder campos de cartão
+        // ✅ BUG 3 FIX: Função para mostrar/esconder campos de cartão
         function toggleCartaoFields() {
             const formaPagamento = document.getElementById('forma_pagamento').value;
             const cartaoFields = document.getElementById('cartao-fields');
-            const tipoGroup = document.getElementById('tipo-group');
+            const tipoSelect = document.getElementById('tipo');
 
             if (formaPagamento === 'Cartão de Crédito') {
                 cartaoFields.classList.add('ativo');
-                tipoGroup.style.display = 'none';
-                document.getElementById('tipo').value = 'Despesa';
+                // ✅ NÃO DESABILITA, apenas define o valor!
+                tipoSelect.value = 'Despesa';  // Define como Despesa
+                // ✅ IMPORTANTE: NÃO usar disabled, senão não envia o valor!
+                tipoSelect.style.opacity = '0.6';  // Apenas visual (mais claro)
+                tipoSelect.style.pointerEvents = 'none';  // Bloqueia clique
             } else {
                 cartaoFields.classList.remove('ativo');
-                tipoGroup.style.display = 'block';
-                document.getElementById('tipo').value = '';
+                tipoSelect.style.opacity = '1';  // Normal
+                tipoSelect.style.pointerEvents = 'auto';  // Permite clique
+                tipoSelect.value = '';  // Reseta o valor
             }
         }
 
