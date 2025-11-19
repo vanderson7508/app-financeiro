@@ -19,7 +19,6 @@ from flask import flash
 app = Flask(__name__)
 # ===== FUNÇÃO PARA CONVERTER VALORES COM VÍRGULA OU PONTO =====
 
-
 def parse_valor(valor_str):
     """Converte string com vírgula ou ponto para float"""
     if not valor_str or not str(valor_str).strip():
