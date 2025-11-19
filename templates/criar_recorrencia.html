@@ -1,265 +1,352 @@
 {% extends "base.html" %}
-{% block title %}Nova Recorrência - Financeiro{% endblock %}
+{% block title %}Criar Recorrência - Financeiro{% endblock %}
 {% block content %}
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
+
+<style>
+    .form-container {
+        max-width: 700px;
+        margin: 40px auto;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-container h2 {
+        color: #333;
+        margin-bottom: 30px;
+        text-align: center;
+        font-size: 1.8em;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 1em;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 1em;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .info-box {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 25px;
+        color: #92400e;
+        font-size: 0.95em;
+    }
+
+    .info-box strong {
+        color: #b45309;
+    }
+
+    .campo-dinamico {
+        display: none;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .campo-dinamico.ativo {
+        display: block;
+        opacity: 1;
+    }
+
+    .localizacao-info {
+        background: #f0f4ff;
+        border-left: 4px solid #667eea;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 15px;
+        font-size: 0.9em;
+        color: #4c5472;
+    }
+
+    .botoes {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    button,
+    .btn {
+        flex: 1;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 1em;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-criar {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-criar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-cancelar {
+        background: #e0e0e0;
+        color: #333;
+    }
+
+    .btn-cancelar:hover {
+        background: #d0d0d0;
+    }
+
+    .field-required::after {
+        content: " *";
+        color: #ef4444;
+    }
+
+    @media (max-width: 600px) {
         .form-container {
-            max-width: 700px;
-            margin: 40px auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-container h2 {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-            font-size: 1.8em;
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1em;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 1em;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            padding: 25px;
+            margin: 20px;
         }
 
         .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .form-row-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-        }
-
-        .info-box {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 25px;
-            color: #333;
-            font-size: 0.95em;
-            line-height: 1.6;
+            grid-template-columns: 1fr;
         }
 
         .botoes {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
+            flex-direction: column;
         }
+    }
+</style>
 
-        button,
-        .btn {
-            flex: 1;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+<div class="form-container">
+    <h2>🔄 Criar Recorrência</h2>
 
-        .btn-enviar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+    <div class="info-box">
+        💡 <strong>Como funciona:</strong> Configure uma transação recorrente que será criada automaticamente na frequência escolhida.
+    </div>
 
-        .btn-enviar:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-cancelar {
-            background: #e0e0e0;
-            color: #333;
-        }
-
-        .btn-cancelar:hover {
-            background: #d0d0d0;
-        }
-
-        @media (max-width: 700px) {
-            .form-container {
-                padding: 25px;
-                margin: 20px;
-            }
-
-            .form-row,
-            .form-row-3 {
-                grid-template-columns: 1fr;
-            }
-
-            .botoes {
-                flex-direction: column;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="form-container">
-        <h2>➕ Nova Recorrência</h2>
-
-        <div class="info-box">
-            <p>💡 <strong>Como funciona:</strong> Registre receitas e despesas que se repetem periodicamente. Elas aparecerão automaticamente na projeção mensal.</p>
+    <form method="POST">
+        <!-- Descrição -->
+        <div class="form-group">
+            <label for="descricao" class="field-required">Descrição</label>
+            <input 
+                type="text" 
+                id="descricao"
+                name="descricao" 
+                placeholder="Ex: Aluguel, Netflix, Conta de água"
+                required
+            >
         </div>
 
-        <form method="POST" action="{{ url_for('criar_recorrencia') }}">
+        <!-- Valor -->
+        <div class="form-group">
+            <label for="valor" class="field-required">Valor (R$)</label>
+            <input 
+                type="number" 
+                id="valor"
+                name="valor" 
+                placeholder="0.00" 
+                step="0.01" 
+                min="0.01"
+                required
+            >
+        </div>
+
+        <!-- Tipo e Categoria -->
+        <div class="form-row">
             <div class="form-group">
-                <label for="descricao">Descrição *</label>
+                <label for="tipo" class="field-required">Tipo</label>
+                <select id="tipo" name="tipo" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="Receita">Receita</option>
+                    <option value="Despesa">Despesa</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="categoria" class="field-required">Categoria</label>
+                <select id="categoria" name="categoria" required>
+                    <option value="">-- Selecione --</option>
+                    {% for categoria in categorias %}
+                        <option value="{{ categoria.nome }}">{{ categoria.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Forma de Pagamento -->
+        <div class="form-group">
+            <label for="forma_pagamento" class="field-required">Forma de Pagamento</label>
+            <select id="forma_pagamento" name="forma_pagamento" required onchange="atualizarCamposDinamicos()">
+                <option value="">-- Selecione --</option>
+                <option value="Dinheiro">💰 Dinheiro (Carteira Física)</option>
+                <option value="Débito">💳 Débito (Banco)</option>
+                <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+                <option value="Transferência">🔄 Transferência</option>
+            </select>
+        </div>
+
+        <!-- Campo Dinâmico: Banco para Débito/Transferência -->
+        <div id="campo-banco" class="form-group campo-dinamico">
+            <div class="localizacao-info">
+                🏦 Selecione o banco para onde será depositado/debitado
+            </div>
+            <label for="banco_id">Banco</label>
+            <select id="banco_id" name="banco_id">
+                <option value="">-- Nenhum banco (Carteira) --</option>
+                {% for banco in bancos %}
+                    <option value="{{ banco.id }}">{{ banco.nome }} (Saldo: R$ {{ "%.2f"|format(banco.saldo) }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Campo Dinâmico: Cartão de Crédito -->
+        <div id="campo-cartao" class="form-group campo-dinamico">
+            <div class="localizacao-info">
+                💳 Selecione o cartão de crédito que será usado
+            </div>
+            <label for="cartao_id">Cartão de Crédito</label>
+            <select id="cartao_id" name="cartao_id">
+                <option value="">-- Selecione um cartão --</option>
+                {% for cartao in cartoes %}
+                    <option value="{{ cartao.id }}">{{ cartao.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Info para Dinheiro -->
+        <div id="info-dinheiro" class="form-group campo-dinamico">
+            <div class="localizacao-info">
+                💰 Esta recorrência será descontada da sua <strong>Carteira Física (Dinheiro)</strong>
+            </div>
+        </div>
+
+        <!-- Frequência e Dia de Vencimento -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="frequencia" class="field-required">Frequência</label>
+                <select id="frequencia" name="frequencia" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="Diária">📅 Diária</option>
+                    <option value="Semanal">📅 Semanal</option>
+                    <option value="Quinzenal">📅 Quinzenal</option>
+                    <option value="Mensal">📅 Mensal</option>
+                    <option value="Bimestral">📅 Bimestral</option>
+                    <option value="Trimestral">📅 Trimestral</option>
+                    <option value="Semestral">📅 Semestral</option>
+                    <option value="Anual">📅 Anual</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="dia_vencimento" class="field-required">Dia do Vencimento</label>
                 <input 
-                    type="text" 
-                    id="descricao" 
-                    name="descricao" 
-                    placeholder="Ex: Salário, Aluguel, Internet" 
+                    type="number" 
+                    id="dia_vencimento"
+                    name="dia_vencimento" 
+                    min="1" 
+                    max="31"
+                    placeholder="1-31"
+                    required
+                >
+            </div>
+        </div>
+
+        <!-- Datas -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="data_inicio" class="field-required">Data de Início</label>
+                <input 
+                    type="date" 
+                    id="data_inicio"
+                    name="data_inicio" 
                     required
                 >
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="valor">Valor (R$) *</label>
-                    <input 
-                        type="number" 
-                        id="valor" 
-                        name="valor" 
-                        placeholder="0.00" 
-                        step="0.01" 
-                        min="0"
-                        required
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label for="tipo">Tipo *</label>
-                    <select id="tipo" name="tipo" required>
-                        <option value="">-- Selecione --</option>
-                        <option value="Receita">Receita</option>
-                        <option value="Despesa">Despesa</option>
-                    </select>
-                </div>
+            <div class="form-group">
+                <label for="data_fim">Data de Fim (opcional)</label>
+                <input 
+                    type="date" 
+                    id="data_fim"
+                    name="data_fim"
+                    placeholder="Deixe vazio para recorrência indefinida"
+                >
             </div>
+        </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="categoria">Categoria *</label>
-                    <select id="categoria" name="categoria" required>
-                        <option value="">-- Selecione uma categoria --</option>
-                        {% for cat in categorias %}
-                            <option value="{{ cat.nome }}">{{ cat.nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+        <!-- Botões -->
+        <div class="botoes">
+            <button type="submit" class="btn-criar">✅ Criar Recorrência</button>
+            <a href="{{ url_for('recorrencias') }}" class="btn btn-cancelar">❌ Cancelar</a>
+        </div>
+    </form>
+</div>
 
-                <div class="form-group">
-                    <label for="forma_pagamento">Forma de Pagamento *</label>
-                    <select id="forma_pagamento" name="forma_pagamento" required>
-                        <option value="">-- Selecione --</option>
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="Débito">Débito</option>
-                        <option value="Crédito">Crédito</option>
-                        <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    </select>
-                </div>
-            </div>
+<script>
+    // Auto-preencher data de hoje
+    document.getElementById('data_inicio').valueAsDate = new Date();
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="frequencia">Frequência *</label>
-                    <select id="frequencia" name="frequencia" required>
-                        <option value="">-- Selecione --</option>
-                        <option value="mensal">Mensal</option>
-                        <option value="bimestral">Bimestral (a cada 2 meses)</option>
-                        <option value="trimestral">Trimestral (a cada 3 meses)</option>
-                        <option value="semestral">Semestral (a cada 6 meses)</option>
-                        <option value="anual">Anual</option>
-                    </select>
-                </div>
+    // Função para atualizar campos dinâmicos
+    function atualizarCamposDinamicos() {
+        const formaPagamento = document.getElementById('forma_pagamento').value;
+        const campoBanco = document.getElementById('campo-banco');
+        const campoCartao = document.getElementById('campo-cartao');
+        const infoDinheiro = document.getElementById('info-dinheiro');
 
-                <div class="form-group">
-                    <label for="dia_vencimento">Dia do Mês *</label>
-                    <input 
-                        type="number" 
-                        id="dia_vencimento" 
-                        name="dia_vencimento" 
-                        min="1" 
-                        max="31" 
-                        placeholder="Ex: 10" 
-                        required
-                    >
-                </div>
-            </div>
+        // Remover classe 'ativo' de todos os campos
+        campoBanco.classList.remove('ativo');
+        campoCartao.classList.remove('ativo');
+        infoDinheiro.classList.remove('ativo');
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="data_inicio">Data de Início *</label>
-                    <input 
-                        type="date" 
-                        id="data_inicio" 
-                        name="data_inicio" 
-                        required
-                    >
-                </div>
+        // Mostrar campo apropriado baseado na forma de pagamento
+        if (formaPagamento === 'Débito' || formaPagamento === 'Transferência') {
+            campoBanco.classList.add('ativo');
+        } else if (formaPagamento === 'Cartão de Crédito') {
+            campoCartao.classList.add('ativo');
+        } else if (formaPagamento === 'Dinheiro') {
+            infoDinheiro.classList.add('ativo');
+        }
+    }
 
-                <div class="form-group">
-                    <label for="data_fim">Data de Fim (opcional)</label>
-                    <input 
-                        type="date" 
-                        id="data_fim" 
-                        name="data_fim"
-                    >
-                </div>
-            </div>
+    // Chamar função ao carregar a página
+    atualizarCamposDinamicos();
+</script>
 
-            <div class="botoes">
-                <button type="submit" class="btn-enviar">✅ Criar Recorrência</button>
-                <a href="{{ url_for('recorrencias') }}" class="btn btn-cancelar">❌ Cancelar</a>
-            </div>
-        </form>
-    </div>
-
-    <script>
-        // Auto-preencher data de hoje
-        document.getElementById('data_inicio').valueAsDate = new Date();
-    </script>
-</body>
-</html>
 {% endblock %}

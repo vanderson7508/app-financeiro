@@ -17,7 +17,6 @@ import logging
 from flask import flash
 
 app = Flask(__name__)
-
 # ===== FUNÇÃO PARA CONVERTER VALORES COM VÍRGULA OU PONTO =====
 
 
@@ -551,10 +550,94 @@ def recuperar_senha(token):
 
 
 @app.route('/')
+def processar_recorrencias():
+    """
+    ✅ Processa recorrências e gera transações automaticamente
+    Esta função deve ser chamada regularmente (diariamente recomendado)
+    """
+    from datetime import date, timedelta
+
+    recorrencias_ativas = Recorrencia.query.filter_by(ativa=True).all()
+    hoje = date.today()
+
+    for rec in recorrencias_ativas:
+        # ✅ Verificar se a recorrência deve gerar transação hoje
+        # Regra simples: se o dia do vencimento é hoje ou passou
+
+        # Se data_fim existe e já passou, não processar
+        if rec.data_fim and hoje > rec.data_fim:
+            continue
+
+        # Se data_inicio ainda não chegou, não processar
+        if hoje < rec.data_inicio:
+            continue
+
+        # Verificar se a transação já foi criada hoje
+        transacao_hoje = Transacao.query.filter_by(
+            usuario_id=rec.usuario_id,
+            descricao=f"[REC] {rec.descricao}",
+            data=hoje
+        ).first()
+
+        if transacao_hoje:
+            continue  # Já foi processada hoje
+
+        # Verificar frequência e se deve gerar transação
+        dias_desde_inicio = (hoje - rec.data_inicio).days
+
+        deve_processar = False
+        if rec.frequencia == 'Diária':
+            deve_processar = True
+        elif rec.frequencia == 'Semanal':
+            deve_processar = dias_desde_inicio % 7 == 0
+        elif rec.frequencia == 'Quinzenal':
+            deve_processar = dias_desde_inicio % 15 == 0
+        elif rec.frequencia == 'Mensal':
+            deve_processar = hoje.day == rec.dia_vencimento
+        elif rec.frequencia == 'Bimestral':
+            meses_desde = (hoje.year - rec.data_inicio.year) * \
+                12 + (hoje.month - rec.data_inicio.month)
+            deve_processar = meses_desde % 2 == 0 and hoje.day == rec.dia_vencimento
+        elif rec.frequencia == 'Trimestral':
+            meses_desde = (hoje.year - rec.data_inicio.year) * \
+                12 + (hoje.month - rec.data_inicio.month)
+            deve_processar = meses_desde % 3 == 0 and hoje.day == rec.dia_vencimento
+        elif rec.frequencia == 'Semestral':
+            meses_desde = (hoje.year - rec.data_inicio.year) * \
+                12 + (hoje.month - rec.data_inicio.month)
+            deve_processar = meses_desde % 6 == 0 and hoje.day == rec.dia_vencimento
+        elif rec.frequencia == 'Anual':
+            deve_processar = (hoje.month == rec.data_inicio.month and
+                              hoje.day == rec.dia_vencimento)
+
+        if deve_processar:
+            # ✅ Criar transação automática
+            nova_transacao = Transacao(
+                usuario_id=rec.usuario_id,
+                descricao=f"[REC] {rec.descricao}",  # Marca como recorrência
+                valor=rec.valor,
+                tipo=rec.tipo,
+                categoria=rec.categoria,
+                forma_pagamento=rec.forma_pagamento,
+                banco_id=rec.banco_id,  # Usa o banco da recorrência
+                data=hoje,
+                data_criacao=datetime.utcnow()
+            )
+
+            db.session.add(nova_transacao)
+            print(f"✅ Recorrência processada: {rec.descricao} ({hoje})")
+
+    db.session.commit()
+
+
 @app.route('/home', methods=['GET'])
 @login_required
 def home():
     """Página inicial com resumo financeiro"""
+
+    # ✅ Processar recorrências antes de mostrar o dashboard
+    processar_recorrencias()
+
     transacoes = Transacao.query.filter_by(usuario_id=current_user.id).all()
 
     # ✅ BUG 4 FIX: NÃO contar transações de CARTÃO no total de receitas/despesas
@@ -1389,6 +1472,12 @@ def criar_recorrencia():
         tipo = request.form.get('tipo')
         categoria = request.form.get('categoria')
         forma_pagamento = request.form.get('forma_pagamento')
+        banco_id_str = request.form.get('banco_id')
+        banco_id = int(
+            banco_id_str) if banco_id_str and banco_id_str != '' else None
+        cartao_id_str = request.form.get('cartao_id')
+        cartao_id = int(
+            cartao_id_str) if cartao_id_str and cartao_id_str != '' else None
         frequencia = request.form.get('frequencia')
         dia_vencimento = request.form.get('dia_vencimento', type=int)
         data_inicio = datetime.strptime(
@@ -1397,6 +1486,17 @@ def criar_recorrencia():
         data_fim = datetime.strptime(
             data_fim_str, '%Y-%m-%d').date() if data_fim_str else None
 
+        # ✅ Se banco_id foi selecionado, verificar propriedade
+        if banco_id:
+            banco = verificar_propriedade_banco(banco_id)
+
+        # ✅ Se cartao_id foi selecionado, verificar propriedade
+        if cartao_id:
+            cartao = CartaoCredito.query.get_or_404(cartao_id)
+            if cartao.usuario_id != current_user.id:
+                flash('❌ Acesso negado!', 'danger')
+                return redirect(url_for('criar_recorrencia'))
+
         nova_recorrencia = Recorrencia(
             usuario_id=current_user.id,
             descricao=descricao,
@@ -1404,6 +1504,8 @@ def criar_recorrencia():
             tipo=tipo,
             categoria=categoria,
             forma_pagamento=forma_pagamento,
+            banco_id=banco_id,  # ✅ Agora aceita banco_id
+            cartao_id=cartao_id,  # ✅ Agora aceita cartao_id
             frequencia=frequencia,
             dia_vencimento=dia_vencimento,
             data_inicio=data_inicio,
@@ -1414,10 +1516,17 @@ def criar_recorrencia():
         db.session.add(nova_recorrencia)
         db.session.commit()
 
+        flash(f'✅ Recorrência "{descricao}" criada com sucesso!', 'success')
         return redirect(url_for('recorrencias'))
 
     categorias = Categoria.query.filter_by(usuario_id=current_user.id).all()
-    return render_template('criar_recorrencia.html', categorias=categorias)
+    bancos = Banco.query.filter_by(usuario_id=current_user.id).all()
+    cartoes = CartaoCredito.query.filter_by(usuario_id=current_user.id).all()
+
+    return render_template('criar_recorrencia.html',
+                           categorias=categorias,
+                           bancos=bancos,
+                           cartoes=cartoes)
 
 
 @app.route('/recorrencias/editar/<int:id>', methods=['GET', 'POST'])
@@ -1499,25 +1608,41 @@ def projecao():
         }
 
         for rec in recorrencias:
-            if rec.data_inicio > data_projecao:
-                continue
-            if rec.data_fim and rec.data_fim < data_projecao:
-                continue
+            # ✅ CORRIGIR: Comparar data_inicio com o primeiro dia do mês
+            # Se data_inicio é depois do primeiro dia deste mês, não mostrar
+            if rec.data_inicio.year > ano_projecao or \
+               (rec.data_inicio.year == ano_projecao and rec.data_inicio.month > mes_projecao):
+                continue  # Ainda não chegou nesse mês
+
+            # Se data_fim passou, não mostrar mais
+            if rec.data_fim and (rec.data_fim.year < ano_projecao or
+               (rec.data_fim.year == ano_projecao and rec.data_fim.month < mes_projecao)):
+                continue  # Já terminou essa recorrência
 
             meses_desde_inicio = (ano_projecao - rec.data_inicio.year) * \
                 12 + (mes_projecao - rec.data_inicio.month)
 
             ocorre = False
-            if rec.frequencia == 'mensal':
+            freq_lower = rec.frequencia.lower()  # ✅ Converter para minúscula para comparar
+
+            if freq_lower == 'mensal':  # ✅ Mensal aparece todo mês
                 ocorre = True
-            elif rec.frequencia == 'bimestral' and meses_desde_inicio % 2 == 0:
+            elif freq_lower == 'diária':  # ✅ Diária aparece todo mês
                 ocorre = True
-            elif rec.frequencia == 'trimestral' and meses_desde_inicio % 3 == 0:
+            elif freq_lower == 'bimestral' and meses_desde_inicio >= 0 and meses_desde_inicio % 2 == 0:
                 ocorre = True
-            elif rec.frequencia == 'semestral' and meses_desde_inicio % 6 == 0:
+            elif freq_lower == 'trimestral' and meses_desde_inicio >= 0 and meses_desde_inicio % 3 == 0:
                 ocorre = True
-            elif rec.frequencia == 'anual' and meses_desde_inicio % 12 == 0:
+            elif freq_lower == 'semestral' and meses_desde_inicio >= 0 and meses_desde_inicio % 6 == 0:
                 ocorre = True
+            elif freq_lower == 'anual' and meses_desde_inicio >= 0 and meses_desde_inicio % 12 == 0:
+                ocorre = True
+            elif freq_lower == 'semanal':  # ✅ Semanal: mostrar no mês de início
+                if meses_desde_inicio == 0:
+                    ocorre = True
+            elif freq_lower == 'quinzenal':  # ✅ Quinzenal: mostrar no mês de início
+                if meses_desde_inicio == 0:
+                    ocorre = True
 
             if ocorre:
                 item = {
@@ -1552,7 +1677,8 @@ def projecao():
     return render_template('projecao.html',
                            meses=meses_exibicao,
                            mes_selecionado=mes_selecionado,
-                           ano_selecionado=ano_selecionado)
+                           ano_selecionado=ano_selecionado,
+                           abs=abs)  # ✅ Adicionar função abs
 
 # ===== ROTAS DE BANCOS =====
 

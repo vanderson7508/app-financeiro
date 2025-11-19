@@ -1,358 +1,430 @@
 {% extends "base.html" %}
 {% block title %}Projeção de Receitas e Despesas - Financeiro{% endblock %}
 {% block content %}
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        .projecao-container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
 
-        .projecao-header {
-            margin-bottom: 30px;
-        }
+<style>
+    .projecao-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
 
-        .projecao-header h2 {
-            color: #333;
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
+    .projecao-header {
+        margin-bottom: 30px;
+    }
 
-        .projecao-header p {
-            color: #666;
-            font-size: 1.1em;
-        }
+    .projecao-header h2 {
+        color: #333;
+        font-size: 2em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        .seletor-mes {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
+    .projecao-header p {
+        color: #666;
+        font-size: 1.1em;
+    }
 
-        .seletor-mes label {
-            font-weight: 600;
-            color: #333;
-        }
+    .seletor-mes {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
 
-        .seletor-mes select {
-            padding: 10px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+    .seletor-mes label {
+        font-weight: 600;
+        color: white;
+        font-size: 1.05em;
+    }
 
-        .seletor-mes select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
+    .seletor-mes select {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1em;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+        color: #333;
+        font-weight: 500;
+        min-width: 150px;
+    }
 
-        .meses-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
+    .seletor-mes select:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+    }
 
-        .card-mes {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
+    .seletor-mes select:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
 
-        .mes-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            font-size: 1.3em;
-            font-weight: 600;
+    .mes-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .mes-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        font-size: 1.8em;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .mes-conteudo {
+        padding: 40px;
+    }
+
+    .secoes-wrapper {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        margin-bottom: 40px;
+    }
+
+    .secao {
+        padding-bottom: 30px;
+    }
+
+    .secao-titulo {
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 1.3em;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #e0e0e0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .secao-titulo.receitas {
+        border-bottom-color: #10b981;
+        color: #10b981;
+    }
+
+    .secao-titulo.despesas {
+        border-bottom-color: #ef4444;
+        color: #ef4444;
+    }
+
+    .item-lista {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 16px;
+        margin-bottom: 12px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        border-left: 4px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+
+    .item-lista:hover {
+        background: #f0f0f0;
+        transform: translateX(4px);
+    }
+
+    .item-lista.receita {
+        border-left-color: #10b981;
+    }
+
+    .item-lista.despesa {
+        border-left-color: #ef4444;
+    }
+
+    .item-descricao {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+    }
+
+    .item-nome {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.05em;
+    }
+
+    .item-info {
+        font-size: 0.9em;
+        color: #999;
+    }
+
+    .item-valor {
+        font-weight: 700;
+        font-size: 1.1em;
+        text-align: right;
+        min-width: 120px;
+        padding-left: 20px;
+    }
+
+    .item-valor.receita {
+        color: #10b981;
+    }
+
+    .item-valor.despesa {
+        color: #ef4444;
+    }
+
+    .sem-items {
+        padding: 20px;
+        text-align: center;
+        color: #999;
+        font-style: italic;
+        background: #f9f9f9;
+        border-radius: 8px;
+    }
+
+    .totais-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 30px;
+        border-radius: 12px;
+        border-top: 3px solid #667eea;
+    }
+
+    .total-linha {
+        display: flex;
+        justify-content: space-between;
+        padding: 15px 0;
+        font-weight: 600;
+        font-size: 1.1em;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .total-linha:last-child {
+        border-bottom: none;
+    }
+
+    .total-linha.saldo {
+        font-size: 1.3em;
+        padding-top: 20px;
+        padding-bottom: 0;
+        margin-top: 15px;
+    }
+
+    .total-receitas {
+        color: #10b981;
+    }
+
+    .total-despesas {
+        color: #ef4444;
+    }
+
+    .total-saldo.positivo {
+        color: #10b981;
+    }
+
+    .total-saldo.negativo {
+        color: #ef4444;
+    }
+
+    .sem-recorrencias {
+        text-align: center;
+        padding: 80px 40px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        color: #999;
+    }
+
+    .sem-recorrencias-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+    }
+
+    .sem-recorrencias p {
+        font-size: 1.2em;
+        margin-bottom: 15px;
+    }
+
+    .navegacao {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .nav-link {
+        padding: 12px 25px;
+        background: #667eea;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .nav-link:hover {
+        background: #764ba2;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .secoes-wrapper {
+            grid-template-columns: 1fr;
+            gap: 30px;
         }
 
         .mes-conteudo {
             padding: 20px;
         }
 
-        .secao-titulo {
-            font-weight: 600;
-            color: #333;
-            margin-top: 20px;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
-            font-size: 1.1em;
-        }
-
-        .secao-titulo.receitas {
-            border-bottom-color: #10b981;
-            color: #10b981;
-        }
-
-        .secao-titulo.despesas {
-            border-bottom-color: #ef4444;
-            color: #ef4444;
-        }
-
-        .item-lista {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.95em;
-        }
-
-        .item-lista:last-child {
-            border-bottom: none;
-        }
-
-        .item-descricao {
-            display: flex;
+        .seletor-mes {
             flex-direction: column;
+            align-items: stretch;
         }
 
-        .item-nome {
-            font-weight: 500;
-            color: #333;
+        .seletor-mes select {
+            width: 100%;
         }
 
-        .item-info {
-            font-size: 0.85em;
-            color: #999;
+        .totais-section {
+            padding: 20px;
         }
+    }
+</style>
 
-        .item-valor {
-            font-weight: 600;
-            text-align: right;
-        }
+<div class="projecao-container">
+    <!-- HEADER -->
+    <div class="projecao-header">
+        <h2>📈 Projeção de Receitas e Despesas</h2>
+        <p>Visualize suas receitas e despesas projetadas para o mês selecionado</p>
+    </div>
 
-        .item-valor.receita {
-            color: #10b981;
-        }
+    <!-- SELETOR DE MÊS -->
+    <div class="seletor-mes">
+        <label for="mes-select">📅 Visualizar mês:</label>
+        <form method="GET" style="display: flex; gap: 10px; align-items: center;">
+            <select name="mes" id="mes-select" onchange="this.form.submit()">
+                <option value="1" {% if mes_selecionado == 1 %}selected{% endif %}>Janeiro</option>
+                <option value="2" {% if mes_selecionado == 2 %}selected{% endif %}>Fevereiro</option>
+                <option value="3" {% if mes_selecionado == 3 %}selected{% endif %}>Março</option>
+                <option value="4" {% if mes_selecionado == 4 %}selected{% endif %}>Abril</option>
+                <option value="5" {% if mes_selecionado == 5 %}selected{% endif %}>Maio</option>
+                <option value="6" {% if mes_selecionado == 6 %}selected{% endif %}>Junho</option>
+                <option value="7" {% if mes_selecionado == 7 %}selected{% endif %}>Julho</option>
+                <option value="8" {% if mes_selecionado == 8 %}selected{% endif %}>Agosto</option>
+                <option value="9" {% if mes_selecionado == 9 %}selected{% endif %}>Setembro</option>
+                <option value="10" {% if mes_selecionado == 10 %}selected{% endif %}>Outubro</option>
+                <option value="11" {% if mes_selecionado == 11 %}selected{% endif %}>Novembro</option>
+                <option value="12" {% if mes_selecionado == 12 %}selected{% endif %}>Dezembro</option>
+            </select>
 
-        .item-valor.despesa {
-            color: #ef4444;
-        }
+            <select name="ano" onchange="this.form.submit()">
+                {% for y in range(2024, 2030) %}
+                    <option value="{{ y }}" {% if ano_selecionado == y %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
 
-        .sem-items {
-            padding: 10px 0;
-            color: #999;
-            font-style: italic;
-            text-align: center;
-        }
+    <!-- MÊS SELECIONADO -->
+    {% if meses %}
+        {% for chave, mes in meses.items() %}
+            <div class="mes-container">
+                <!-- HEADER DO MÊS -->
+                <div class="mes-header">
+                    📅 {{ mes.mes }} de {{ mes.ano }}
+                </div>
 
-        .totais {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-
-        .total-linha {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-weight: 600;
-        }
-
-        .total-linha.saldo {
-            font-size: 1.1em;
-            padding-top: 12px;
-            border-top: 2px solid #e0e0e0;
-            margin-top: 12px;
-        }
-
-        .total-receitas {
-            color: #10b981;
-        }
-
-        .total-despesas {
-            color: #ef4444;
-        }
-
-        .total-saldo.positivo {
-            color: #10b981;
-        }
-
-        .total-saldo.negativo {
-            color: #ef4444;
-        }
-
-        .navegacao {
-            margin-top: 30px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            padding: 12px 25px;
-            background: #e0e0e0;
-            color: #333;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .nav-link:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .sem-recorrencias {
-            text-align: center;
-            padding: 60px 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            color: #999;
-        }
-
-        .sem-recorrencias p {
-            font-size: 1.1em;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .meses-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .seletor-mes {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .seletor-mes select {
-                width: 100%;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="projecao-container">
-        <div class="projecao-header">
-            <h2>📈 Projeção de Receitas e Despesas</h2>
-            <p>Veja o que vai receber e gastar nos próximos meses</p>
-        </div>
-
-        <!-- SELETOR DE MÊS -->
-        <div class="seletor-mes">
-            <label for="mes-select">Visualizar a partir de:</label>
-            <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                <select name="mes" id="mes-select" onchange="this.form.submit()">
-                    <option value="1" {% if mes_selecionado == 1 %}selected{% endif %}>Janeiro</option>
-                    <option value="2" {% if mes_selecionado == 2 %}selected{% endif %}>Fevereiro</option>
-                    <option value="3" {% if mes_selecionado == 3 %}selected{% endif %}>Março</option>
-                    <option value="4" {% if mes_selecionado == 4 %}selected{% endif %}>Abril</option>
-                    <option value="5" {% if mes_selecionado == 5 %}selected{% endif %}>Maio</option>
-                    <option value="6" {% if mes_selecionado == 6 %}selected{% endif %}>Junho</option>
-                    <option value="7" {% if mes_selecionado == 7 %}selected{% endif %}>Julho</option>
-                    <option value="8" {% if mes_selecionado == 8 %}selected{% endif %}>Agosto</option>
-                    <option value="9" {% if mes_selecionado == 9 %}selected{% endif %}>Setembro</option>
-                    <option value="10" {% if mes_selecionado == 10 %}selected{% endif %}>Outubro</option>
-                    <option value="11" {% if mes_selecionado == 11 %}selected{% endif %}>Novembro</option>
-                    <option value="12" {% if mes_selecionado == 12 %}selected{% endif %}>Dezembro</option>
-                </select>
-
-                <select name="ano" onchange="this.form.submit()">
-                    {% for y in range(2024, 2030) %}
-                        <option value="{{ y }}" {% if ano_selecionado == y %}selected{% endif %}>{{ y }}</option>
-                    {% endfor %}
-                </select>
-            </form>
-        </div>
-
-        <!-- MESES -->
-        {% if meses %}
-            <div class="meses-grid">
-                {% for chave, mes in meses.items() %}
-                    <div class="card-mes">
-                        <div class="mes-header">
-                            📅 {{ mes.mes }} de {{ mes.ano }}
-                        </div>
-
-                        <div class="mes-conteudo">
-                            <!-- RECEITAS -->
+                <!-- CONTEÚDO -->
+                <div class="mes-conteudo">
+                    <!-- RECEITAS E DESPESAS LADO A LADO -->
+                    <div class="secoes-wrapper">
+                        <!-- RECEITAS -->
+                        <div class="secao">
                             <div class="secao-titulo receitas">💚 Receitas</div>
                             {% if mes.receitas %}
                                 {% for item in mes.receitas %}
-                                    <div class="item-lista">
+                                    <div class="item-lista receita">
                                         <div class="item-descricao">
                                             <span class="item-nome">{{ item.descricao }}</span>
-                                            <span class="item-info">{{ item.categoria }} • {{ item.dia_vencimento }}º</span>
+                                            <span class="item-info">{{ item.categoria }} • Dia {{ item.dia_vencimento }}º</span>
                                         </div>
                                         <span class="item-valor receita">+R$ {{ "%.2f"|format(item.valor) }}</span>
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <div class="sem-items">Nenhuma receita</div>
+                                <div class="sem-items">Nenhuma receita prevista</div>
                             {% endif %}
+                        </div>
 
-                            <!-- DESPESAS -->
+                        <!-- DESPESAS -->
+                        <div class="secao">
                             <div class="secao-titulo despesas">❤️ Despesas</div>
                             {% if mes.despesas %}
                                 {% for item in mes.despesas %}
-                                    <div class="item-lista">
+                                    <div class="item-lista despesa">
                                         <div class="item-descricao">
                                             <span class="item-nome">{{ item.descricao }}</span>
-                                            <span class="item-info">{{ item.categoria }} • {{ item.dia_vencimento }}º</span>
+                                            <span class="item-info">{{ item.categoria }} • Dia {{ item.dia_vencimento }}º</span>
                                         </div>
                                         <span class="item-valor despesa">-R$ {{ "%.2f"|format(item.valor) }}</span>
                                     </div>
                                 {% endfor %}
                             {% else %}
-                                <div class="sem-items">Nenhuma despesa</div>
+                                <div class="sem-items">Nenhuma despesa prevista</div>
                             {% endif %}
-
-                            <!-- TOTAIS -->
-                            <div class="totais">
-                                <div class="total-linha">
-                                    <span>Total Receitas:</span>
-                                    <span class="total-receitas">+R$ {{ "%.2f"|format(mes.total_receitas) }}</span>
-                                </div>
-                                <div class="total-linha">
-                                    <span>Total Despesas:</span>
-                                    <span class="total-despesas">-R$ {{ "%.2f"|format(mes.total_despesas) }}</span>
-                                </div>
-                                <div class="total-linha saldo {% if mes.saldo >= 0 %}positivo{% else %}negativo{% endif %}">
-                                    <span>Saldo do Mês:</span>
-                                    <span class="total-saldo {% if mes.saldo >= 0 %}positivo{% else %}negativo{% endif %}">
-                                        {% if mes.saldo >= 0 %}
-                                            +R$ {{ "%.2f"|format(mes.saldo) }}
-                                        {% else %}
-                                            -R$ {{ "%.2f"|format(abs(mes.saldo)) }}
-                                        {% endif %}
-                                    </span>
-                                </div>
-                            </div>
                         </div>
                     </div>
-                {% endfor %}
+
+                    <!-- TOTAIS -->
+                    <div class="totais-section">
+                        <div class="total-linha">
+                            <span>💚 Total Receitas:</span>
+                            <span class="total-receitas">+R$ {{ "%.2f"|format(mes.total_receitas) }}</span>
+                        </div>
+                        <div class="total-linha">
+                            <span>❤️ Total Despesas:</span>
+                            <span class="total-despesas">-R$ {{ "%.2f"|format(mes.total_despesas) }}</span>
+                        </div>
+                        <div class="total-linha saldo {% if mes.saldo >= 0 %}positivo{% else %}negativo{% endif %}">
+                            <span>📊 Saldo do Mês:</span>
+                            <span class="total-saldo {% if mes.saldo >= 0 %}positivo{% else %}negativo{% endif %}">
+                                {% if mes.saldo >= 0 %}
+                                    +R$ {{ "%.2f"|format(mes.saldo) }}
+                                {% else %}
+                                    -R$ {{ "%.2f"|format(abs(mes.saldo)) }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
-        {% else %}
+        {% endfor %}
+    {% else %}
+        <div class="mes-container">
             <div class="sem-recorrencias">
-                <p>😕 Nenhuma recorrência cadastrada!</p>
+                <div class="sem-recorrencias-icon">😕</div>
+                <p>Nenhuma recorrência cadastrada para este período!</p>
                 <p>Crie receitas e despesas recorrentes para ver a projeção.</p>
             </div>
-        {% endif %}
-
-        <div class="navegacao">
-            <a href="{{ url_for('home') }}" class="nav-link">← Voltar para Home</a>
-            <a href="{{ url_for('recorrencias') }}" class="nav-link">🔄 Gerenciar Recorrências</a>
-            <a href="{{ url_for('adicionar') }}" class="nav-link">➕ Adicionar Transação</a>
         </div>
+    {% endif %}
+
+    <!-- NAVEGAÇÃO -->
+    <div class="navegacao">
+        <a href="{{ url_for('home') }}" class="nav-link">← Voltar para Home</a>
+        <a href="{{ url_for('recorrencias') }}" class="nav-link">🔄 Gerenciar Recorrências</a>
+        <a href="{{ url_for('adicionar') }}" class="nav-link">➕ Adicionar Transação</a>
     </div>
-</body>
-</html>
+</div>
+
 {% endblock %}
