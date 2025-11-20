@@ -41,6 +41,57 @@ def parse_valor(valor_str):
         return 0.0
 
 # ===== FIM DA FUNÇÃO =====
+def criar_transacao_de_recorrencia(recorrencia):
+    """
+    Cria uma transação automaticamente quando uma recorrência é criada.
+    Mas APENAS se a data_inicio é HOJE ou ANTES.
+    """
+
+    from datetime import datetime
+
+    # Verificar se JÁ existe transação para esta recorrência de hoje
+    ja_existe = Transacao.query.filter_by(
+        recorrencia_id=recorrencia.id,
+        data=datetime.now().date()
+    ).first()
+
+    # Se já existe, não cria novamente (evita duplicatas)
+    if ja_existe:
+        print(f"✓ Transação já existe para recorrência {recorrencia.id}")
+        return ja_existe
+
+    # SE a recorrência começa HOJE ou ANTES, cria a transação
+    if recorrencia.data_inicio <= datetime.now().date():
+
+        try:
+            # Criar a transação
+            transacao = Transacao(
+                usuario_id=recorrencia.usuario_id,
+                descricao=recorrencia.descricao,
+                valor=recorrencia.valor,
+                tipo=recorrencia.tipo,
+                categoria=recorrencia.categoria,
+                forma_pagamento=recorrencia.forma_pagamento,
+                banco_id=recorrencia.banco_id,
+                cartao_id=recorrencia.cartao_id,
+                data=datetime.now().date(),  # HOJE
+                recorrencia_id=recorrencia.id  # Link para recorrência
+            )
+
+            db.session.add(transacao)
+            db.session.commit()
+
+            print(f"✅ Transação criada: {recorrencia.descricao}")
+            return transacao
+
+        except Exception as e:
+            print(f"❌ Erro ao criar transação: {e}")
+            db.session.rollback()
+            return None
+
+    else:
+        print(f"ℹ Recorrência começa em {recorrencia.data_inicio}, não é hoje")
+        return None
 
 # ===== FUNÇÃO PARA GERENCIAR FATURAS =====
 
@@ -1514,7 +1565,8 @@ def criar_recorrencia():
 
         db.session.add(nova_recorrencia)
         db.session.commit()
-
+         # ✅ Criar transação automaticamente
+        criar_transacao_de_recorrencia(nova_recorrencia)
         flash(f'✅ Recorrência "{descricao}" criada com sucesso!', 'success')
         return redirect(url_for('recorrencias'))
 
