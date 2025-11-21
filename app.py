@@ -121,6 +121,18 @@ def criar_transacao_de_recorrencia(recorrencia):
             db.session.commit()
 
             print(f"✅ Transação criada: {recorrencia.descricao}")
+
+            # ✅ Atualizar saldo do banco se banco_id foi fornecido
+            if recorrencia.banco_id:
+                banco = Banco.query.get(recorrencia.banco_id)
+                if banco:
+                    if recorrencia.tipo.lower() == 'saída' or recorrencia.tipo.lower() == 'despesa':
+                        banco.saldo -= recorrencia.valor
+                    elif recorrencia.tipo.lower() == 'entrada' or recorrencia.tipo.lower() == 'receita':
+                        banco.saldo += recorrencia.valor
+                    db.session.commit()
+                    print(f"✅ Saldo do banco atualizado: {banco.nome}")
+
             return transacao
 
         except Exception as e:
@@ -1216,6 +1228,27 @@ def deletar(id):
             # DELETAR A COMPRA
             db.session.delete(compra)
 
+    # ✅ Restaurar saldo do banco se transação tem banco_id
+    if transacao.banco_id:
+        banco = Banco.query.get(transacao.banco_id)
+        if banco:
+            # Se era SAÍDA, RESTAURA (adiciona de volta)
+            if transacao.tipo.lower() == 'saída' or transacao.tipo.lower() == 'despesa':
+                banco.saldo += transacao.valor
+                print(f"✅ Saldo restaurado ao deletar: +R$ {transacao.valor}")
+            # Se era ENTRADA, REMOVE (tira de volta)
+            elif transacao.tipo.lower() == 'entrada' or transacao.tipo.lower() == 'receita':
+                banco.saldo -= transacao.valor
+                print(f"✅ Saldo ajustado ao deletar: -R$ {transacao.valor}")
+            db.session.commit()
+
+    # ✅ Se transação tem recorrencia_id, deletar recorrência também
+    if transacao.recorrencia_id:
+        recorrencia = Recorrencia.query.get(transacao.recorrencia_id)
+        if recorrencia:
+            print(f"✅ Deletando recorrência vinculada: {recorrencia.descricao}")
+            db.session.delete(recorrencia)
+
     # DELETAR A TRANSAÇÃO
     db.session.delete(transacao)
     db.session.commit()
@@ -1655,7 +1688,31 @@ def editar_recorrencia(id):
 def deletar_recorrencia(id):
     # SEGURANÇA: Verificar propriedade
     recorrencia = verificar_propriedade_recorrencia(id)
-    recorrencia.ativa = False
+
+    # ✅ Restaurar saldo do banco quando deleta recorrência
+    if recorrencia.banco_id:
+        banco = Banco.query.get(recorrencia.banco_id)
+        if banco:
+            # Se era SAÍDA, RESTAURA (adiciona de volta)
+            if recorrencia.tipo.lower() == 'saída' or recorrencia.tipo.lower() == 'despesa':
+                banco.saldo += recorrencia.valor
+                print(f"✅ Saldo restaurado: +R$ {recorrencia.valor}")
+            # Se era ENTRADA, REMOVE (tira de volta)
+            elif recorrencia.tipo.lower() == 'entrada' or recorrencia.tipo.lower() == 'receita':
+                banco.saldo -= recorrencia.valor
+                print(f"✅ Saldo ajustado: -R$ {recorrencia.valor}")
+            db.session.commit()
+
+    # ✅ Deletar todas as transações vinculadas a esta recorrência
+    transacoes_recorrencia = Transacao.query.filter_by(recorrencia_id=recorrencia.id).all()
+    for transacao in transacoes_recorrencia:
+        print(f"✅ Deletando transação: {transacao.descricao}")
+        db.session.delete(transacao)
+
+    db.session.commit()
+
+    # ✅ Deletar recorrência completamente (não só marcar como inativa)
+    db.session.delete(recorrencia)
     db.session.commit()
 
     return redirect(url_for('recorrencias'))
