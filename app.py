@@ -17,6 +17,45 @@ import logging
 from flask import flash
 
 app = Flask(__name__)
+
+# ✅ AUTO-MIGRATION: Adicionar colunas na inicialização
+def create_missing_columns():
+    """Cria colunas faltantes na tabela transacoes"""
+    with app.app_context():
+        try:
+            from sqlalchemy import text
+
+            with db.engine.connect() as connection:
+                # Verificar e adicionar cartao_id
+                try:
+                    connection.execute(text(
+                        'ALTER TABLE transacoes ADD COLUMN cartao_id INTEGER REFERENCES cartoes_credito(id);'
+                    ))
+                    connection.commit()
+                    print("✅ Coluna cartao_id adicionada!")
+                except Exception as e:
+                    if 'already exists' in str(e).lower() or 'column' in str(e).lower():
+                        pass
+                    else:
+                        print(f"⚠️ Erro em cartao_id: {e}")
+
+                # Verificar e adicionar recorrencia_id
+                try:
+                    connection.execute(text(
+                        'ALTER TABLE transacoes ADD COLUMN recorrencia_id INTEGER REFERENCES recorrencias(id);'
+                    ))
+                    connection.commit()
+                    print("✅ Coluna recorrencia_id adicionada!")
+                except Exception as e:
+                    if 'already exists' in str(e).lower() or 'column' in str(e).lower():
+                        pass
+                    else:
+                        print(f"⚠️ Erro em recorrencia_id: {e}")
+        except Exception as e:
+            print(f"❌ Erro na migration: {e}")
+
+# Chamar a função para criar colunas faltantes
+create_missing_columns()
 # ===== FUNÇÃO PARA CONVERTER VALORES COM VÍRGULA OU PONTO =====
 
 def parse_valor(valor_str):
